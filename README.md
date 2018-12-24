@@ -42,4 +42,5 @@ Note: Runtime may vary depending on the number of days/classes that need the sig
 9. PyInstaller - Bundles Python applications and all its dependencies into an executable.
 
 -------- Authors --------
+
 Patrick Yu - Initial work - UC Berkeley Extension

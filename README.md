@@ -1,4 +1,3 @@
-# AutoSigns
 ======== AutoSigns ========
 
 AutoSigns is an application designed to automate the following:

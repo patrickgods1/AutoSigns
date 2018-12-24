@@ -1,4 +1,7 @@
-PyQt5
-PyInstaller
-python-pptx
+pandas
+pyinstaller
+pyqt5
 python-docx
+python-pptx
+selenium
+xlsxwriter

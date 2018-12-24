@@ -41,6 +41,11 @@ Note: Runtime may vary depending on the number of days/classes that need the sig
 8. QtDesigner - GUI builder tool.
 9. PyInstaller - Bundles Python applications and all its dependencies into an executable.
 
+-------- Running the Script --------
+1. Install Python 3.6+
+2. pip install -r requirements.txt
+3. .\AutoSigns.py
+
 -------- Authors --------
 
 Patrick Yu - Initial work - UC Berkeley Extension

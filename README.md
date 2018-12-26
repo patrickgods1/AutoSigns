@@ -34,6 +34,7 @@ These instructions will get you a copy of the project up and running on your loc
 * [Pandas](https://pandas.pydata.org/) - Data structure/anaylsis tool used.
 * [python-docx](https://python-docx.readthedocs.io/en/latest/) - Used to create Microsoft Word documents (Classroom signs)
 * [Selenium](https://selenium-python.readthedocs.io/) - Web crawling automation framework.
+* [Chrome Webdriver](http://chromedriver.chromium.org/downloads) - Webdriver for Chrome browser. Use to control automation with Selenium.
 * [xlsxwriter](https://xlsxwriter.readthedocs.io/) - Used to create Microsoft Excel documents (Daily Schedule)
 * [python-pptx](https://python-pptx.readthedocs.io/en/latest/) - Used to create Microsoft PowerPoint documents
 * [PyQt5](https://pypi.org/project/PyQt5/) - Framework used to create GUI.

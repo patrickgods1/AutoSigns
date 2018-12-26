@@ -1,23 +1,24 @@
-======== AutoSigns ========
+# AutoSigns
 
 AutoSigns is an application designed to automate the following:
 
 1. Downloading the Section Schedule Daily Summary from Destiny and creating a sorted/formatted report.
 2. Creating the signage for classes running. This includes:
-	a. Classroom signs
-        b. Daily Schedules
-        c. PowerPoint slide deck for TV display
+	* Classroom signs
+        * Daily Schedules
+        * PowerPoint slide deck for TV display
 
--------- Prerequisites --------
+## Getting Started
+### Prerequisites
 
 The following must be installed:
 
-1. Google Chrome
-2. Microsoft Excel
-3. Microsoft PowerPoint
-4. Microsoft Word
+* Google Chrome
+* Microsoft Excel
+* Microsoft PowerPoint
+* Microsoft Word
 
--------- Usage --------
+### Usage
 
 1. Check the box next to the function(s) you would like to use
 2. Fill in the require fields.
@@ -27,25 +28,28 @@ The following must be installed:
 Note: Runtime may vary depending on the number of days/classes that need the signs to be created for.
 
 
-======== Development ========
+## Development
+### Built With
 
--------- Built With --------
+* [Python 3.6](https://docs.python.org/3/) - The scripting language used.
+* [Pandas](https://pandas.pydata.org/) - Data structure/anaylsis tool used.
+* [python-docx](https://python-docx.readthedocs.io/en/latest/) - Used to create Microsoft Word documents (Classroom signs)
+* [Selenium](https://selenium-python.readthedocs.io/) - Web crawling automation framework.
+* [xlsxwriter](https://xlsxwriter.readthedocs.io/) - Used to create Microsoft Excel documents (Daily Schedule)
+* [python-pptx](https://python-pptx.readthedocs.io/en/latest/) - Used to create Microsoft PowerPoint documents
+* [PyQt5](https://pypi.org/project/PyQt5/) - Framework used to create GUI.
+* [QtDesigner](http://doc.qt.io/qt-5/qtdesigner-manual.html) - GUI builder tool.
+* [PyInstaller](https://www.pyinstaller.org/) - Used to create executable for release.
 
-1. Python 3.X standard library - Used for basic logic flow.
-2. Python Pandas library - Data framework for reading and manipulating data.
-3. python-docx library - Used to create Microsoft Word documents (Classroom signs)
-4. Python Selenium library - Web crawling automation framework.
-5. xlsxwriter - Used to create Microsoft Excel documents (Daily Schedule)
-6. python-pptx library - Used to create Microsoft PowerPoint documents
-7. PyQt5 - GUI framework.
-8. QtDesigner - GUI builder tool.
-9. PyInstaller - Bundles Python applications and all its dependencies into an executable.
+### Running the Script
+Run the following command to installer all the required Python modules:
+```
+pip install -r requirements.txt
+```
+To run the application:
+```
+.\AutoSigns.py
+```
 
--------- Running the Script --------
-1. Install Python 3.6+
-2. pip install -r requirements.txt
-3. .\AutoSigns.py
-
--------- Authors --------
-
-Patrick Yu - Initial work - UC Berkeley Extension
+## Authors
+* **Patrick Yu** - *Initial work* - [patrickgod1](https://github.com/patrickgod1)

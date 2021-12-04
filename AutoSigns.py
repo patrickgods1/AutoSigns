@@ -7,6 +7,8 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import WebDriverException
+from webdriver_manager.chrome import ChromeDriverManager
 import pandas as pd
 import docx
 from docx.enum.section import WD_ORIENT
@@ -22,7 +24,7 @@ if hasattr(QtCore.Qt, 'AA+_UseHighDpiPixmaps'):
 
 # Global variables and flags
 current_folder = os.path.realpath(os.path.abspath(os.path.split(inspect.getfile(inspect.currentframe() ))[0]))
-ABSWTemplate = os.path.join(current_folder, "Template-ABSW.docx")
+# ABSWTemplate = os.path.join(current_folder, "Template-ABSW.docx")
 GBCTemplate = os.path.join(current_folder, "Template-GBC.docx")
 GBCPptTemplate = os.path.join(current_folder, "Template-GBC.pptx")
 SFCTemplate = os.path.join(current_folder, "Template-SFC.docx")
@@ -30,7 +32,7 @@ SFCPptTemplate = os.path.join(current_folder, "Template-SFC.pptx")
 genReport = False
 startDate = '2018-01-01'
 endDate = '2018-01-01'
-location = 'ABSW'
+location = 'Golden Bear Center'
 createSigns = False
 useExistingReport = False
 saveReportToPath = ''
@@ -39,14 +41,16 @@ classroomSignsOutput = False
 dailyScheduleOutput = False
 powerpointOutput = False
 saveSignsDirectory = ''
-center = {'ABSW': {'campus': 'Berkeley - CA0001', 'building': 'UC Berkeley Extension American Baptist Seminary of the West, 2515 Hillegass Ave. - '},
-          'Belmont': {'campus': 'Belmont - CA0004', 'building': 'UC Berkeley Extension Belmont Center, 1301 Shoreway Rd., Ste. 400 - BEL'},
+center = {
+        # 'ABSW': {'campus': 'Berkeley - CA0001', 'building': 'UC Berkeley Extension American Baptist Seminary of the West, 2515 Hillegass Ave. - '},
+        #   'Belmont': {'campus': 'Belmont - CA0004', 'building': 'UC Berkeley Extension Belmont Center, 1301 Shoreway Rd., Ste. 400 - BEL'},
           'Golden Bear Center': {'campus': 'Berkeley - CA0001', 'building': 'UC Berkeley Extension Golden Bear Center, 1995 University Ave. - GBC'},
           'San Francisco Center': {'campus': 'San Francisco - CA0003', 'building': 'San Francisco Campus, 160 Spear St. - SFCAMPUS'}
             }
 
-centerReverse = {'ABSW - UC Berkeley Extension American Baptist Seminary of the West, 2515 Hillegass Ave.': {'name':'ABSW', 'template': ABSWTemplate, 'pptTemplate': GBCPptTemplate},
-                 'BEL - UC Berkeley Extension Belmont Center, 1301 Shoreway Rd., Ste. 400': {'name':'BLM', 'template': ABSWTemplate, 'pptTemplate': GBCPptTemplate},
+centerReverse = {
+                # 'ABSW - UC Berkeley Extension American Baptist Seminary of the West, 2515 Hillegass Ave.': {'name':'ABSW', 'template': ABSWTemplate, 'pptTemplate': GBCPptTemplate},
+                #  'BEL - UC Berkeley Extension Belmont Center, 1301 Shoreway Rd., Ste. 400': {'name':'BLM', 'template': ABSWTemplate, 'pptTemplate': GBCPptTemplate},
                  'GBC - UC Berkeley Extension Golden Bear Center, 1995 University Ave.': {'name': 'GBC', 'template' : GBCTemplate, 'pptTemplate': GBCPptTemplate},
                  'SFCAMPUS - San Francisco Campus, 160 Spear St.': {'name': 'SFC', 'template': SFCTemplate, 'pptTemplate': SFCPptTemplate}}
 
@@ -201,8 +205,8 @@ class Ui_mainWindow(object):
         self.selectLocation.setObjectName("selectLocation")
         self.selectLocation.addItem("")
         self.selectLocation.addItem("")
-        self.selectLocation.addItem("")
-        self.selectLocation.addItem("")
+        # self.selectLocation.addItem("")
+        # self.selectLocation.addItem("")
         self.locationLayout.addWidget(self.selectLocation)
         self.genReportLayout.addLayout(self.locationLayout)
         self.saveReportPathLayout = QtWidgets.QHBoxLayout()
@@ -512,10 +516,12 @@ class Ui_mainWindow(object):
         self.startDateLabel.setText(_translate("mainWindow", "Start Date:"))
         self.endDateLabel.setText(_translate("mainWindow", "End Date:"))
         self.locationLabel.setText(_translate("mainWindow", "Location:"))
-        self.selectLocation.setItemText(0, _translate("mainWindow", "ABSW"))
-        self.selectLocation.setItemText(1, _translate("mainWindow", "Belmont"))
-        self.selectLocation.setItemText(2, _translate("mainWindow", "Golden Bear Center"))
-        self.selectLocation.setItemText(3, _translate("mainWindow", "San Francisco Center"))
+        # self.selectLocation.setItemText(0, _translate("mainWindow", "ABSW"))
+        # self.selectLocation.setItemText(1, _translate("mainWindow", "Belmont"))
+        # self.selectLocation.setItemText(2, _translate("mainWindow", "Golden Bear Center"))
+        # self.selectLocation.setItemText(3, _translate("mainWindow", "San Francisco Center"))
+        self.selectLocation.setItemText(0, _translate("mainWindow", "Golden Bear Center"))
+        self.selectLocation.setItemText(1, _translate("mainWindow", "San Francisco Center"))
         self.saveReportPathLabel.setText(_translate("mainWindow", "Save Path:"))
         self.selectSaveReportPath.setText(_translate("mainWindow", ""))
         self.browseSaveReportButton.setText(_translate("mainWindow", "Browse"))
@@ -561,7 +567,10 @@ class Ui_mainWindow(object):
 
     def startDateChanged(self):
         global startDate
+        global endDate
         startDate = str(self.selectStartDate.date().toPyDate())
+        endDate = startDate
+        self.selectEndDate.setDate(self.selectStartDate.date())
 
     def endDateChanged(self):
         global endDate
@@ -573,7 +582,7 @@ class Ui_mainWindow(object):
 
     def saveReportDirectory(self):
         global saveReportToPath
-        saveReportToPath = QFileDialog.getExistingDirectory(None, 'Save Destiny Report to')
+        saveReportToPath = os.path.normpath(QFileDialog.getExistingDirectory(None, 'Save Destiny Report to'))
         self.selectSaveReportPath.setText(saveReportToPath)
 
     def createSignsState(self):
@@ -604,6 +613,7 @@ class Ui_mainWindow(object):
     def existingReportPath(self):
         global existingReportPath
         existingReportPath, _ = QFileDialog.getOpenFileName(None, "Select SectionScheduleDailySummary.xls", "", "Excel Files (*.xls)")
+        existingReportPath = os.path.normpath(existingReportPath)
         self.selectExistingReportPath.setText(existingReportPath)
 
     def classroomSignsState(self):
@@ -629,7 +639,7 @@ class Ui_mainWindow(object):
 
     def saveSignsPath(self):
         global saveSignsDirectory
-        saveSignsDirectory = QFileDialog.getExistingDirectory(None, 'Save Signs to')
+        saveSignsDirectory = os.path.normpath(QFileDialog.getExistingDirectory(None, 'Save Signs to'))
         self.selectSaveSignsPath.setText(saveSignsDirectory)
 
     def exitApp(self):
@@ -653,11 +663,23 @@ class Ui_mainWindow(object):
                 QMessageBox.warning(None, 'Save location error', "Please select where you want to save the report to.")
                 return
             else:
+                if createSigns:
+                    if saveSignsDirectory == '' or os.path.isdir(saveSignsDirectory) == False:
+                        QMessageBox.warning(None, 'Save location error', "Please select where you want to save the signs to.")
+                        return 
+                    elif not(classroomSignsOutput or dailyScheduleOutput or powerpointOutput):
+                        QMessageBox.warning(None, 'No output selected', "Please select at least one output: Classroom Sign, Daily Schedule, or PowerPoint")
+                        return
                 if os.path.isdir(saveReportToPath):
-                    genReportFunction()
+                    result = genReportFunction()
                 else:  
                     QMessageBox.warning(None, 'Save location error', "The directory you've selected does not exist. Please select where you want to save the report to.")
                     return
+        if result == 0:
+            QMessageBox.warning(None, 'Download error', "Report could not be downloaded. Please try again.")
+            return
+        elif result == 1 and createSigns == False:
+            QMessageBox.warning(None, 'Done', "Downloading Destiny Report is complete.")
         if createSigns:
             chars = set(r'<>?[]:|*')
             if saveSignsDirectory == '' or os.path.isdir(saveSignsDirectory) == False:
@@ -668,20 +690,20 @@ class Ui_mainWindow(object):
                     print(r'Filename or path contains: <>?[]:|*')
                     QMessageBox.warning(None, 'Save location error', r'The save path cannot contain any of the following characters: <>?[]:| or *')
                     return
-                elif os.path.exists(f"{saveReportToPath}/SectionScheduleDailySummary.xls") == False:
-                    QMessageBox.warning(None, 'Save location error', "The file you've selected does not exist. Please select where you want to save the report to.")
-                    return
+                # elif os.path.exists(f"{saveReportToPath}\\SectionScheduleDailySummary.xls") == False:
+                #     QMessageBox.warning(None, 'Save location error', "The file you've selected does not exist. Please select where you want to save the report to.")
+                #     return
                 elif not(classroomSignsOutput or dailyScheduleOutput or powerpointOutput):
                     QMessageBox.warning(None, 'No output selected', "Please select at least one output: Classroom Sign, Daily Schedule, or PowerPoint")
                     return     
                 else:
-                    if (classroomSignsOutput and createSignsFunction(f"{saveReportToPath}/SectionScheduleDailySummary.xls") == 0):
+                    if (classroomSignsOutput and createSignsFunction(f"{saveReportToPath}\\SectionScheduleDailySummary.xls") == 0):
                         result = 0
                         pass
-                    if (dailyScheduleOutput and createDailySchedule(f"{saveReportToPath}/SectionScheduleDailySummary.xls") == 0):
+                    if (dailyScheduleOutput and createDailySchedule(f"{saveReportToPath}\\SectionScheduleDailySummary.xls") == 0):
                         result = 0
                         pass
-                    if (powerpointOutput and createPPT(f"{saveReportToPath}/SectionScheduleDailySummary.xls") == 0):
+                    if (powerpointOutput and createPPT(f"{saveReportToPath}\\SectionScheduleDailySummary.xls") == 0):
                         result = 0
                         pass
 
@@ -715,41 +737,48 @@ class Ui_mainWindow(object):
                 
 def genReportFunction():
     # Set Chrome defaults to automate download
+    # saveReportToPath = 'C:\\Users\\patyu\\Desktop'
     chrome_options = webdriver.ChromeOptions()
     chrome_options.add_experimental_option("prefs", {
         "download.default_directory": saveReportToPath,
         "download.prompt_for_download": False,
         "download.directory_upgrade": True,
-        "safebrowsing.endabled": True
+        "safebrowsing.enabled": True
         })
         
     # Delete old report if it exists
-    if os.path.exists(f"{saveReportToPath}/SectionScheduleDailySummary.xls"):
-        os.remove(f"{saveReportToPath}/SectionScheduleDailySummary.xls")
+    if os.path.exists(f"{saveReportToPath}\\SectionScheduleDailySummary.xls"):
+        os.remove(f"{saveReportToPath}\\SectionScheduleDailySummary.xls")
 
     # Download Destiny Report
-    chromedriver = os.path.join(current_folder,"chromedriver.exe")
-    browser = webdriver.Chrome(executable_path = chromedriver, chrome_options=chrome_options)
-    browser.get('https://berkeleysv.destinysolutions.com')
-    WebDriverWait(browser,3600).until(EC.presence_of_element_located((By.ID,"main-area-body")))
-    browser.get('https://berkeleysv.destinysolutions.com/srs/reporting/sectionScheduleDailySummary.do?method=load')
-    startDateElm = browser.find_element_by_id('startDateRecordString')
-    startDateElm.send_keys(startDate)
-    endDateElm = browser.find_element_by_id('endDateRecordString')
-    endDateElm.send_keys(endDate)
-    campusElm = browser.find_element_by_name('scheduleBlock.campusId')
-    campusElm.send_keys(center[location]['campus'])
-    buildingElm = browser.find_element_by_name('scheduleBlock.buildingId')
-    buildingElm.send_keys(center[location]['building'])
-    outputTypeElm = browser.find_element_by_name('outputType')
-    outputTypeElm.send_keys("Output to XLS (Export)")
-    generateReportElm = browser.find_element_by_id('processReport')
-    generateReportElm.click()
-    while not os.path.exists(f"{saveReportToPath}/SectionScheduleDailySummary.xls"):
-        time.sleep(1)
-    browser.close()
-    browser.quit()
-
+    try:
+        # chromedriver = os.path.join(current_folder,"chromedriver.exe")
+        browser = webdriver.Chrome(executable_path=ChromeDriverManager().install(), options=chrome_options)
+        browser.get('https://berkeleysv.destinysolutions.com')
+        WebDriverWait(browser,3600).until(EC.presence_of_element_located((By.ID,"main-area-body")))
+        browser.get('https://berkeleysv.destinysolutions.com/srs/reporting/sectionScheduleDailySummary.do?method=load')
+        startDateElm = browser.find_element_by_id('startDateRecordString')
+        startDateElm.send_keys(startDate)
+        endDateElm = browser.find_element_by_id('endDateRecordString')
+        endDateElm.send_keys(endDate)
+        campusElm = browser.find_element_by_name('scheduleBlock.campusId')
+        campusElm.send_keys(center[location]['campus'])
+        buildingElm = browser.find_element_by_name('scheduleBlock.buildingId')
+        buildingElm.send_keys(center[location]['building'])
+        outputTypeElm = browser.find_element_by_name('outputType')
+        outputTypeElm.send_keys("Output to XLS (Export)")
+        generateReportElm = browser.find_element_by_id('processReport')
+        generateReportElm.click()
+        while not os.path.exists(f"{saveReportToPath}\\SectionScheduleDailySummary.xls"):
+            time.sleep(1)
+        # browser.close()
+        browser.quit()
+        return 1
+    except WebDriverException:
+        browser.quit()
+        return 0
+    #     # print(f'Could not download report. Try again later.')
+    
 
 def createSignsFunction(reportPath):
     # Read in courses from Excel
@@ -766,14 +795,15 @@ def createSignsFunction(reportPath):
     # 17    R   Technology
     # 18    S   Section Size
     # 20    U   Notes
-    # 22    W   Final Approval
+    # 22    W   Approval Status
     
     # Read into Pandas dataframe for relevant columns
     pd.set_option('display.max_rows', 500)
     pd.set_option('display.max_columns', 500)
     pd.set_option('display.width', 1000)
-    schedule = pd.read_excel(reportPath, header=6, skipfooter=1, usecols=[1,4,6,11,13,15], parse_dates=['Start Time', 'End Time'])
-    
+    schedule = pd.read_excel(reportPath, header=6, skipfooter=1, usecols=[1,4,6,11,13,15,22], parse_dates=['Start Time', 'End Time'])
+    schedule = schedule[schedule['Approval Status'] == 'Final Approval'].copy()
+
     # Determine if the Destiny report does not have any classes
     if schedule.empty:
         return 0
@@ -830,7 +860,7 @@ def GBCClassroomSigns(schedule, location, template):
                 newFile = True
                 dayofweek = datetime.datetime.strptime(previousDate, '%B %d, %Y').strftime('%A')
                 fileDate = datetime.datetime.strptime(previousDate, '%B %d, %Y').strftime('%Y-%m-%d')
-                doc.save(f"{saveSignsDirectory}/{location} {fileDate} {dayofweek}.docx")
+                doc.save(f"{saveSignsDirectory}\\{location} {fileDate} {dayofweek}.docx")
                 previousClassroom = ''
             # Create Classroom Signs, set defaults for new file
             doc = docx.Document(template)
@@ -899,9 +929,9 @@ def GBCClassroomSigns(schedule, location, template):
 
         # Format table columns
         for cell in table.columns[0].cells:
-            cell.width = Inches(6.9)
+            cell.width = Inches(6.7)
         for cell in table.columns[1].cells:
-            cell.width = Inches(3.1)
+            cell.width = Inches(3.3)
         # Change font size of text in table
         for row in table.rows:
             for cell in row.cells:
@@ -915,7 +945,7 @@ def GBCClassroomSigns(schedule, location, template):
     # Save as Microsoft Word docx file for each day
     dayofweek = datetime.datetime.strptime(previousDate, '%B %d, %Y').strftime('%A')
     fileDate = datetime.datetime.strptime(previousDate, '%B %d, %Y').strftime('%Y-%m-%d')
-    doc.save(f"{saveSignsDirectory}/{location} {fileDate} {dayofweek}.docx")
+    doc.save(f"{saveSignsDirectory}\\{location} {fileDate} {dayofweek}.docx")
     return 1
 
 
@@ -962,7 +992,7 @@ def SFCClassroomSigns(schedule, location, template):
                 newFile = True
                 dayofweek = datetime.datetime.strptime(previousDate, '%B %d, %Y').strftime('%A')
                 fileDate = datetime.datetime.strptime(previousDate, '%B %d, %Y').strftime('%Y-%m-%d')
-                doc.save(f"{saveSignsDirectory}/{location} {fileDate} {dayofweek}.docx")
+                doc.save(f"{saveSignsDirectory}\\{location} {fileDate} {dayofweek}.docx")
                 previousClassroom = ''
             # Create Classroom Signs, set defaults for new file
             doc = docx.Document(template)
@@ -1044,7 +1074,7 @@ def SFCClassroomSigns(schedule, location, template):
     # Save as Microsoft Word docx file for each day
     dayofweek = datetime.datetime.strptime(previousDate, '%B %d, %Y').strftime('%A')
     fileDate = datetime.datetime.strptime(previousDate, '%B %d, %Y').strftime('%Y-%m-%d')
-    doc.save(f"{saveSignsDirectory}/{location} {fileDate} {dayofweek}.docx")
+    doc.save(f"{saveSignsDirectory}\\{location} {fileDate} {dayofweek}.docx")
     return 1    
 
 def createDailySchedule(reportPath):
@@ -1062,10 +1092,11 @@ def createDailySchedule(reportPath):
     # 17    R   Technology
     # 18    S   Section Size
     # 20    U   Notes
-    # 22    W   Final Approval
+    # 22    W   Approval Status
     
     # Read into Pandas dataframe for relevant columns
-    schedule = pd.read_excel(reportPath, header=6, skipfooter=1, usecols=[1,4,6,9,11,12,13,15], parse_dates=['Start Time', 'End Time'])
+    schedule = pd.read_excel(reportPath, header=6, skipfooter=1, usecols=[1,4,6,9,11,12,13,15,22], parse_dates=['Start Time', 'End Time'])
+    schedule = schedule[schedule['Approval Status'] == 'Final Approval'].copy()
 
     # Determine if the Destiny report does not have any classes
     if schedule.empty:
@@ -1083,12 +1114,11 @@ def GBCDailySchedule(schedule, location):
     sortedSchedule = schedule.sort_values(by=['Date','Start Time', 'Room'])
     sortedSchedule['Start Time'] = sortedSchedule['Start Time'].dt.strftime('%I:%M %p')
     sortedSchedule['End Time'] = sortedSchedule['End Time'].dt.strftime('%I:%M %p')
-    dateList = sortedSchedule['Date'].astype(datetime.datetime).unique()
-    
+    dateList = pd.to_datetime(sortedSchedule['Date'].unique())
     if(len(dateList) == 1):
-        writer = pd.ExcelWriter(f"{saveSignsDirectory}/{location} {dateList[0].strftime('%Y-%m-%d')} {dateList[0].strftime('%A')}.xlsx", engine='xlsxwriter')
+        writer = pd.ExcelWriter(f"{saveSignsDirectory}\\{location} {dateList[0].strftime('%Y-%m-%d')} {dateList[0].strftime('%A')}.xlsx", engine='xlsxwriter')
     else:
-        writer = pd.ExcelWriter(f"{saveSignsDirectory}/{location} {dateList[0].strftime('%Y-%m-%d')} {dateList[0].strftime('%A')} to {dateList[-1].strftime('%Y-%m-%d')} {dateList[-1].strftime('%A')}.xlsx", engine='xlsxwriter')
+        writer = pd.ExcelWriter(f"{saveSignsDirectory}\\{location} {dateList[0].strftime('%Y-%m-%d')} {dateList[0].strftime('%A')} to {dateList[-1].strftime('%Y-%m-%d')} {dateList[-1].strftime('%A')}.xlsx", engine='xlsxwriter')
     workbook = writer.book
     # loop through each day
     for i in range(0,len(dateList)):
@@ -1219,15 +1249,15 @@ def SFCDailySchedule(schedule, location):
     dateList = sortedSchedule['Date'].astype(datetime.datetime).unique()
     
     if(len(dateList) == 1):
-        writer = pd.ExcelWriter(f"{saveSignsDirectory}/{location} {dateList[0].strftime('%Y-%m-%d')} {dateList[0].strftime('%A')}.xlsx", engine='xlsxwriter')
+        writer = pd.ExcelWriter(f"{saveSignsDirectory}\\{location} {dateList[0].strftime('%Y-%m-%d')} {dateList[0].strftime('%A')}.xlsx", engine='xlsxwriter')
     else:    
-        writer = pd.ExcelWriter(f"{saveSignsDirectory}/{location} {dateList[0].strftime('%Y-%m-%d')} {dateList[0].strftime('%A')} to {dateList[-1].strftime('%Y-%m-%d')} {dateList[-1].strftime('%A')}.xlsx", engine='xlsxwriter')
+        writer = pd.ExcelWriter(f"{saveSignsDirectory}\\{location} {dateList[0].strftime('%Y-%m-%d')} {dateList[0].strftime('%A')} to {dateList[-1].strftime('%Y-%m-%d')} {dateList[-1].strftime('%A')}.xlsx", engine='xlsxwriter')
     workbook = writer.book
     # loop through each day
     for i in range(0,len(dateList)):
         worksheet = workbook.add_worksheet(dateList[i].strftime('%Y-%m-%d'))
         worksheet.set_portrait()       # Page orientation as landscape.
-        worksheet.hide_gridlines(0)     # Don’t hide gridlines.
+        # worksheet.hide_gridlines(0)     # Don’t hide gridlines.
         worksheet.fit_to_pages(1, 1)    # Fit to 1x1 pages.
         worksheet.center_horizontally()
         worksheet.center_vertically()
@@ -1432,10 +1462,11 @@ def createPPT(reportPath):
     # 17    R   Technology
     # 18    S   Section Size
     # 20    U   Notes
-    # 22    W   Final Approval
+    # 22    W   Approval Status
     
     # Read into Pandas dataframe for relevant columns
-    schedule = pd.read_excel(reportPath, header=6, skipfooter=1, usecols=[1,4,6,9,11,12,13,15], parse_dates=['Start Time', 'End Time'])
+    schedule = pd.read_excel(reportPath, header=6, skipfooter=1, usecols=[1,4,6,9,11,12,13,15,22], parse_dates=['Start Time', 'End Time'])
+    schedule = schedule[schedule['Approval Status'] == 'Final Approval'].copy()
 
     # Determine if the Destiny report does not have any classes
     if schedule.empty:
@@ -1455,7 +1486,7 @@ def GBCppt(schedule, location, template):
     sortedSchedule = schedule.sort_values(by=['Date','Start Time', 'Room'])
     sortedSchedule['Start Time'] = sortedSchedule['Start Time'].dt.strftime('%I:%M %p')
     sortedSchedule['End Time'] = sortedSchedule['End Time'].dt.strftime('%I:%M %p')
-    dateList = sortedSchedule['Date'].astype(datetime.datetime).unique()
+    dateList = pd.to_datetime(sortedSchedule['Date'].unique())
     
     # Go through each day, write out schedule one block per slide. Hide slide if no classes in block.
     for i in range(0,len(dateList)):
@@ -1497,7 +1528,9 @@ def GBCppt(schedule, location, template):
                     else:
                         run.text = str(row[value]).lstrip('0')
                     font = run.font
-                    font.size = Pt(65)
+                    # font.size = Pt(65)
+                    fontSize = 65 if 950//len(morningBlock.index) >= 65 else 950//len(morningBlock.index)
+                    font.size = Pt(fontSize)
                     font.name = 'Calibri'
                     font.bold = True
                     font.color.rgb = color
@@ -1536,7 +1569,9 @@ def GBCppt(schedule, location, template):
                     else:
                         run.text = str(row[value]).lstrip('0')  
                     font = run.font
-                    font.size = Pt(65)
+                    # font.size = Pt(65)
+                    fontSize = 65 if 950//len(afternoonBlock.index) >= 65 else 950//len(afternoonBlock.index)
+                    font.size = Pt(fontSize)
                     font.name = 'Calibri'
                     font.bold = True
                     font.color.rgb = color
@@ -1575,7 +1610,9 @@ def GBCppt(schedule, location, template):
                     else:
                         run.text = str(row[value]).lstrip('0')
                     font = run.font
-                    font.size = Pt(65)
+                    # font.size = Pt(65)
+                    fontSize = 65 if 950//len(eveningBlock.index) >= 65 else 950//len(eveningBlock.index)
+                    font.size = Pt(fontSize)
                     font.name = 'Calibri'
                     font.bold = True
                     font.color.rgb = color
@@ -1584,7 +1621,7 @@ def GBCppt(schedule, location, template):
             slide._element.set('show', '0')
         
         # Save as Microsoft Powerpoint pptx file, per day
-        prs.save(f"{saveSignsDirectory}/{location} {dateList[i].strftime('%Y-%m-%d')} {dateList[i].strftime('%A')}.pptx")
+        prs.save(f"{saveSignsDirectory}\\{location} {dateList[i].strftime('%Y-%m-%d')} {dateList[i].strftime('%A')}.pptx")
             
     return 1
 
@@ -1956,7 +1993,7 @@ def SFCppt(schedule, location, template):
             slide._element.set('show', '0')
 
         # Save as Microsoft Powerpoint pptx file, per day
-        prs.save(f"{saveSignsDirectory}/{location} {dateList[i].strftime('%Y-%m-%d')} {dateList[i].strftime('%A')}.pptx")
+        prs.save(f"{saveSignsDirectory}\\{location} {dateList[i].strftime('%Y-%m-%d')} {dateList[i].strftime('%A')}.pptx")
     return 1
     
 

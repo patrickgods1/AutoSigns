@@ -5,7 +5,7 @@ block_cipher = None
 
 a = Analysis(['AutoSigns.py'],
              pathex=['C:\Python36\Lib\site-packages\scipy\extra-dll'],
-             binaries=[("chromedriver.exe",".")],
+             binaries=[],
              datas=[("Template-ABSW.docx", "."),("Template-GBC.docx", "."),("Template-GBC.pptx", "."), ("Template-SFC.docx", "."),("Template-SFC.pptx", "."), ("README.txt", ".")],
              hiddenimports=['PyQt5.sip'],
              hookspath=[],
@@ -19,7 +19,7 @@ pyz = PYZ(a.pure, a.zipped_data,
 exe = EXE(pyz,
           a.scripts,
           exclude_binaries=True,
-          name='AutoSigns v0.7.2',
+          name='AutoSigns v0.7.8',
           debug=False,
           strip=False,
           upx=True,
@@ -30,4 +30,4 @@ coll = COLLECT(exe,
                a.datas,
                strip=False,
                upx=True,
-               name='AutoSigns v0.7.2')
+               name='AutoSigns v0.7.8')

@@ -2,11 +2,12 @@
 
 AutoSigns is an application designed to automate the following:
 
-1. Downloading the Section Schedule Daily Summary from Destiny and creating a sorted/formatted report.
-2. Creating the signage for classes running. This includes:
-	a. Classroom signs
-        b. Daily Schedules
-        c. PowerPoint slide deck for TV display
+1. Extract/loading the Section Schedule Daily Summary report.
+2. Transform the data by sorting/formating the report.
+3. Creating the signage from the final report. This includes:
+    a. Classroom signs
+    b. Daily Schedules
+    c. PowerPoint slide deck for TV display
 
 -------- Prerequisites --------
 
@@ -35,11 +36,12 @@ Note: Runtime may vary depending on the number of days/classes that need the sig
 2. Python Pandas library - Data framework for reading and manipulating data.
 3. python-docx library - Used to create Microsoft Word documents (Classroom signs)
 4. Python Selenium library - Web crawling automation framework.
-5. xlsxwriter - Used to create Microsoft Excel documents (Daily Schedule)
-6. python-pptx library - Used to create Microsoft PowerPoint documents
-7. PyQt5 - GUI framework.
-8. QtDesigner - GUI builder tool.
-9. PyInstaller - Bundles Python applications and all its dependencies into an executable.
+5. Webdriver-Manager - Framework to manage webdriver version compatible with version of browser
+6. xlsxwriter - Used to create Microsoft Excel documents (Daily Schedule)
+7. python-pptx library - Used to create Microsoft PowerPoint documents
+8. PyQt5 - GUI framework.
+9. QtDesigner - GUI builder tool.
+10. PyInstaller - Bundles Python applications and all its dependencies into an executable.
 
 -------- Authors --------
 

@@ -2,8 +2,9 @@
 
 AutoSigns is an application designed to automate the following:
 
-1. Downloading the Section Schedule Daily Summary from Destiny and creating a sorted/formatted report.
-2. Creating the signage for classes running. This includes:
+1. Extract/loading the Section Schedule Daily Summary report.
+2. Transform the data by sorting/formating the report.
+3. Creating the signage from the final report. This includes:
 	* Classroom signs
     * Daily Schedules
     * PowerPoint slide deck for TV display
@@ -35,6 +36,7 @@ These instructions will get you a copy of the project up and running on your loc
 * [python-docx](https://python-docx.readthedocs.io/en/latest/) - Used to create Microsoft Word documents (Classroom signs)
 * [Selenium](https://selenium-python.readthedocs.io/) - Web crawling automation framework.
 * [Chrome Webdriver](http://chromedriver.chromium.org/downloads) - Webdriver for Chrome browser. Use to control automation with Selenium.
+* [Webdriver-Manager](https://github.com/SergeyPirogov/webdriver_manager) - Framework to manage webdriver version compatible with version of browser.
 * [xlsxwriter](https://xlsxwriter.readthedocs.io/) - Used to create Microsoft Excel documents (Daily Schedule)
 * [python-pptx](https://python-pptx.readthedocs.io/en/latest/) - Used to create Microsoft PowerPoint documents
 * [PyQt5](https://pypi.org/project/PyQt5/) - Framework used to create GUI.
@@ -48,7 +50,7 @@ pip install -r requirements.txt
 ```
 To run the application:
 ```
-.\AutoSigns.py
+python .\AutoSigns.py
 ```
 
 ### Compiling using PyInstaller

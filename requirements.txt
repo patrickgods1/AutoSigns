@@ -4,5 +4,6 @@ pyqt5
 python-docx
 python-pptx
 selenium
+webdriver-manager
 xlsxwriter
 xlrd

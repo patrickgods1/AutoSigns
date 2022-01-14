@@ -1243,10 +1243,10 @@ def GBCDailySchedule(schedule, location):
 
 
 def SFCDailySchedule(schedule, location):
-    sortedSchedule = schedule.sort_values(by=['Date', 'Start Time'])
+    sortedSchedule = schedule.sort_values(by=['Date','Start Time', 'Room'])
     sortedSchedule['Start Time'] = sortedSchedule['Start Time'].dt.strftime('%I:%M %p')
     sortedSchedule['End Time'] = sortedSchedule['End Time'].dt.strftime('%I:%M %p')
-    dateList = sortedSchedule['Date'].astype(datetime.datetime).unique()
+    dateList = pd.to_datetime(sortedSchedule['Date'].unique())
     
     if(len(dateList) == 1):
         writer = pd.ExcelWriter(f"{saveSignsDirectory}\\{location} {dateList[0].strftime('%Y-%m-%d')} {dateList[0].strftime('%A')}.xlsx", engine='xlsxwriter')
@@ -1631,7 +1631,7 @@ def SFCppt(schedule, location, template):
     sortedSchedule = schedule.sort_values(by=['Date','Start Time', 'Room'])
     sortedSchedule['Start Time'] = sortedSchedule['Start Time'].dt.strftime('%I:%M %p')
     sortedSchedule['End Time'] = sortedSchedule['End Time'].dt.strftime('%I:%M %p')
-    dateList = sortedSchedule['Date'].astype(datetime.datetime).unique()
+    dateList = pd.to_datetime(sortedSchedule['Date'].unique())
 
     # Go through each day, write out schedule one block per slide. Hide slide if no classes in block.
     for i in range(0,len(dateList)):

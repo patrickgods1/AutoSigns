@@ -15,6 +15,8 @@ from docx.enum.section import WD_ORIENT
 from docx.shared import Pt, Inches
 from pptx import Presentation
 from pptx.dml.color import RGBColor
+# Work with Google Sheets
+import pygsheets
 
 if hasattr(QtCore.Qt, 'AA_EnableHighDpiScaling'):
     QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling, True)
@@ -1115,13 +1117,14 @@ def GBCDailySchedule(schedule, location):
     sortedSchedule['Start Time'] = sortedSchedule['Start Time'].dt.strftime('%I:%M %p')
     sortedSchedule['End Time'] = sortedSchedule['End Time'].dt.strftime('%I:%M %p')
     dateList = pd.to_datetime(sortedSchedule['Date'].unique())
+
     if(len(dateList) == 1):
         writer = pd.ExcelWriter(f"{saveSignsDirectory}\\{location} {dateList[0].strftime('%Y-%m-%d')} {dateList[0].strftime('%A')}.xlsx", engine='xlsxwriter')
     else:
         writer = pd.ExcelWriter(f"{saveSignsDirectory}\\{location} {dateList[0].strftime('%Y-%m-%d')} {dateList[0].strftime('%A')} to {dateList[-1].strftime('%Y-%m-%d')} {dateList[-1].strftime('%A')}.xlsx", engine='xlsxwriter')
     workbook = writer.book
     # loop through each day
-    for i in range(0,len(dateList)):
+    for i in range(0, len(dateList)):
         worksheet = workbook.add_worksheet(dateList[i].strftime('%Y-%m-%d'))
         worksheet.set_landscape()       # Page orientation as landscape.
         worksheet.hide_gridlines(0)     # Don’t hide gridlines.
@@ -1176,7 +1179,7 @@ def GBCDailySchedule(schedule, location):
         excelRow = 3
         if not morningBlock.empty:
             worksheet.write(excelRow, 0, 'Morning Classes', titleFormat)
-            excelRow +=1
+            excelRow += 1
             for i, row in morningBlock.iterrows():
                 worksheet.write(excelRow, 0, row['Start Time'].lstrip('0'), bodyFormat)
                 worksheet.write(excelRow, 1, row['End Time'].lstrip('0'), bodyFormat)
@@ -1187,7 +1190,7 @@ def GBCDailySchedule(schedule, location):
                 elif not pd.isnull(row["Instructor"]):
                     worksheet.write(excelRow, 4, row['Instructor'], bodyFormat)
                 worksheet.write(excelRow, 5, row['Room'], bodyFormat)
-                excelRow +=1
+                excelRow += 1
 
         if not afternoonBlock.empty:
             excelRow += 1
@@ -1203,7 +1206,7 @@ def GBCDailySchedule(schedule, location):
                 elif not pd.isnull(row["Instructor"]):
                     worksheet.write(excelRow, 4, row['Instructor'], bodyFormat)
                 worksheet.write(excelRow, 5, row['Room'], bodyFormat)
-                excelRow +=1
+                excelRow += 1
 
         if not eveningBlock.empty:
             excelRow += 1
@@ -1219,7 +1222,7 @@ def GBCDailySchedule(schedule, location):
                 elif not pd.isnull(row["Instructor"]):
                     worksheet.write(excelRow, 4, row['Instructor'], bodyFormat)
                 worksheet.write(excelRow, 5, row['Room'], bodyFormat)
-                excelRow +=1
+                excelRow += 1
 
         max_length = [14, 10, 4] # Set the minimum column width of ['Section Number', 'Instructor', 'Room'], in character length
         for i, row in singleDaySched.iterrows():
@@ -1254,7 +1257,7 @@ def SFCDailySchedule(schedule, location):
         writer = pd.ExcelWriter(f"{saveSignsDirectory}\\{location} {dateList[0].strftime('%Y-%m-%d')} {dateList[0].strftime('%A')} to {dateList[-1].strftime('%Y-%m-%d')} {dateList[-1].strftime('%A')}.xlsx", engine='xlsxwriter')
     workbook = writer.book
     # loop through each day
-    for i in range(0,len(dateList)):
+    for i in range(0, len(dateList)):
         worksheet = workbook.add_worksheet(dateList[i].strftime('%Y-%m-%d'))
         worksheet.set_portrait()       # Page orientation as landscape.
         # worksheet.hide_gridlines(0)     # Don’t hide gridlines.
@@ -1335,16 +1338,16 @@ def SFCDailySchedule(schedule, location):
         excelRow = 2
         worksheet.merge_range(f'A{str(excelRow+1)}:E{str(excelRow +1)}', '', blankFormat)
         if not daytimeBlock.empty:
-            excelRow +=1
+            excelRow += 1
             worksheet.merge_range(f'A{str(excelRow + 1)}:B{str(excelRow + 2)}', 'Daytime Classes', blockFormat)
             worksheet.merge_range(f'C{str(excelRow + 1)}:E{str(excelRow + 2)}', '', blockFormat)
-            excelRow +=1
+            excelRow += 1
 
             if not daytime5thFlr.empty:
-                excelRow +=1
+                excelRow += 1
                 worksheet.merge_range(f'A{str(excelRow+1)}:B{str(excelRow +1)}', '5th Floor', blockFormat)
                 worksheet.merge_range(f'C{str(excelRow + 1)}:E{str(excelRow + 1)}', '', blockFormat)
-                excelRow +=1
+                excelRow += 1
 
                 for i, row in daytime5thFlr.iterrows():
                     worksheet.write(excelRow, 0, row['Start Time'].lstrip('0'), bodyFormat)
@@ -1352,14 +1355,14 @@ def SFCDailySchedule(schedule, location):
                     worksheet.write(excelRow, 2, row['Section Number'], bodyFormat)
                     worksheet.write(excelRow, 3, row['Section Title'], bodyFormat)
                     worksheet.write(excelRow, 4, row['Room'].replace('Classroom', ''), bodyFormat)
-                    excelRow +=1
+                    excelRow += 1
                 worksheet.merge_range(f'A{str(excelRow+1)}:E{str(excelRow +1)}', '', blankFormat)
 
             if not daytime6thFlr.empty:
-                excelRow +=1
+                excelRow += 1
                 worksheet.merge_range(f'A{str(excelRow+1)}:B{str(excelRow +1)}', '6th Floor', blockFormat)
                 worksheet.merge_range(f'C{str(excelRow + 1)}:E{str(excelRow + 1)}', '', blockFormat)
-                excelRow +=1
+                excelRow += 1
 
                 for i, row in daytime6thFlr.iterrows():
                     worksheet.write(excelRow, 0, row['Start Time'].lstrip('0'), bodyFormat)
@@ -1371,10 +1374,10 @@ def SFCDailySchedule(schedule, location):
                 worksheet.merge_range(f'A{str(excelRow+1)}:E{str(excelRow +1)}', '', blankFormat)
 
             if not daytime7thFlr.empty:
-                excelRow +=1
+                excelRow += 1
                 worksheet.merge_range(f'A{str(excelRow+1)}:B{str(excelRow +1)}', '7th Floor', blockFormat)
                 worksheet.merge_range(f'C{str(excelRow + 1)}:E{str(excelRow + 1)}', '', blockFormat)
-                excelRow +=1
+                excelRow += 1
 
                 for i, row in daytime7thFlr.iterrows():
                     worksheet.write(excelRow, 0, row['Start Time'].lstrip('0'), bodyFormat)
@@ -1382,21 +1385,21 @@ def SFCDailySchedule(schedule, location):
                     worksheet.write(excelRow, 2, row['Section Number'], bodyFormat)
                     worksheet.write(excelRow, 3, row['Section Title'], bodyFormat)
                     worksheet.write(excelRow, 4, row['Room'].replace('Classroom', ''), bodyFormat)
-                    excelRow +=1
+                    excelRow += 1
                 worksheet.merge_range(f'A{str(excelRow+1)}:E{str(excelRow +1)}', '', blankFormat)
 
          # Write to cells for evening courses, by floor
         if not eveningBlock.empty:
-            excelRow +=1
+            excelRow += 1
             worksheet.merge_range(f'A{str(excelRow+1)}:B{str(excelRow + 2)}', 'Evening Classes', blockFormat)
             worksheet.merge_range(f'C{str(excelRow + 1)}:E{str(excelRow + 2)}', '', blockFormat)
-            excelRow +=1
+            excelRow += 1
 
             if not evening5thFlr.empty:
                 excelRow +=1
                 worksheet.merge_range(f'A{str(excelRow+1)}:B{str(excelRow +1)}', '5th Floor', blockFormat)
                 worksheet.merge_range(f'C{str(excelRow + 1)}:E{str(excelRow + 1)}', '', blockFormat)
-                excelRow +=1
+                excelRow += 1
 
                 for i, row in evening5thFlr.iterrows():
                     worksheet.write(excelRow, 0, row['Start Time'].lstrip('0'), bodyFormat)
@@ -1404,14 +1407,14 @@ def SFCDailySchedule(schedule, location):
                     worksheet.write(excelRow, 2, row['Section Number'], bodyFormat)
                     worksheet.write(excelRow, 3, row['Section Title'], bodyFormat)
                     worksheet.write(excelRow, 4, row['Room'].replace('Classroom', ''), bodyFormat)
-                    excelRow +=1
+                    excelRow += 1
                 worksheet.merge_range(f'A{str(excelRow+1)}:E{str(excelRow +1)}', '', blankFormat)
 
             if not evening6thFlr.empty:
-                excelRow +=1
+                excelRow += 1
                 worksheet.merge_range(f'A{str(excelRow+1)}:B{str(excelRow +1)}', '6th Floor', blockFormat)
                 worksheet.merge_range(f'C{str(excelRow + 1)}:E{str(excelRow + 1)}', '', blockFormat)
-                excelRow +=1
+                excelRow += 1
 
                 for i, row in evening6thFlr.iterrows():
                     worksheet.write(excelRow, 0, row['Start Time'].lstrip('0'), bodyFormat)
@@ -1423,10 +1426,10 @@ def SFCDailySchedule(schedule, location):
                 worksheet.merge_range(f'A{str(excelRow+1)}:E{str(excelRow +1)}', '', blankFormat)
 
             if not evening7thFlr.empty:
-                excelRow +=1
+                excelRow += 1
                 worksheet.merge_range(f'A{str(excelRow+1)}:B{str(excelRow +1)}', '7th Floor', blockFormat)
                 worksheet.merge_range(f'C{str(excelRow + 1)}:E{str(excelRow + 1)}', '', blockFormat)
-                excelRow +=1
+                excelRow += 1
 
                 for i, row in evening7thFlr.iterrows():
                     worksheet.write(excelRow, 0, row['Start Time'].lstrip('0'), bodyFormat)
@@ -1434,7 +1437,7 @@ def SFCDailySchedule(schedule, location):
                     worksheet.write(excelRow, 2, row['Section Number'], bodyFormat)
                     worksheet.write(excelRow, 3, row['Section Title'], bodyFormat)
                     worksheet.write(excelRow, 4, row['Room'].replace('Classroom', ''), bodyFormat)
-                    excelRow +=1
+                    excelRow += 1
 
         # Adjust column with of the excel file
         worksheet.set_column('A:A', 18.57)
@@ -1488,6 +1491,8 @@ def GBCppt(schedule, location, template):
     sortedSchedule['End Time'] = sortedSchedule['End Time'].dt.strftime('%I:%M %p')
     dateList = pd.to_datetime(sortedSchedule['Date'].unique())
     
+    GBCScheduleToGSheets(dateList[0], sortedSchedule.loc[sortedSchedule['Date'] == dateList[0], : ])
+
     # Go through each day, write out schedule one block per slide. Hide slide if no classes in block.
     for i in range(0,len(dateList)):
         singleDaySched = sortedSchedule.loc[sortedSchedule['Date'] == dateList[i], : ]
@@ -1534,7 +1539,7 @@ def GBCppt(schedule, location, template):
                     font.name = 'Calibri'
                     font.bold = True
                     font.color.rgb = color
-                currentRow +=1
+                currentRow += 1
         else:
             slide._element.set('show', '0')
 
@@ -1575,7 +1580,7 @@ def GBCppt(schedule, location, template):
                     font.name = 'Calibri'
                     font.bold = True
                     font.color.rgb = color
-                currentRow +=1
+                currentRow += 1
         else:
             slide._element.set('show', '0')
 
@@ -1616,7 +1621,7 @@ def GBCppt(schedule, location, template):
                     font.name = 'Calibri'
                     font.bold = True
                     font.color.rgb = color
-                currentRow +=1
+                currentRow += 1
         else:
             slide._element.set('show', '0')
         
@@ -1626,13 +1631,34 @@ def GBCppt(schedule, location, template):
     return 1
 
 
+def GBCScheduleToGSheets(date, schedule):
+    morningBlock = schedule.loc[schedule['Start Time'].astype('datetime64') < '12:00:00', : ]
+    afternoonBlock = schedule.loc[(schedule['Start Time'].astype('datetime64') >= '12:00:00') & (schedule['Start Time'].astype('datetime64') < '17:00:00'), : ]
+    eveningBlock = schedule.loc[schedule['Start Time'].astype('datetime64') >= '17:00:00', : ]
+    blockList = [('Morning', morningBlock),('Afternoon', afternoonBlock),('Evening', eveningBlock)]
+    dirpath = os.getcwd()
+    client = pygsheets.authorize(service_file=f'{dirpath}/service_file.json')
+    try:
+        sheet = client.open_by_key('1ooteC1nuN8wkAOqdPXj6zjtLBoMVKRs4gqlOCBsmFzU')
+        # print(f"Opened spreadsheet with id:{sheet.id} and url:{sheet.url}")
+    except pygsheets.SpreadsheetNotFound as error:
+        print(error)
+        return error
+    finally:
+        for i in range(len(blockList)):
+            wks = sheet.worksheet_by_title(blockList[i][0])
+            wks.clear(start='A1', end=None, fields='*')
+            wks.update_value('A1', f"UC Berkeley Extension - {date.strftime('%A')}, {date.strftime('%B %d, %Y').replace(' 0', ' ')}")
+            wks.set_dataframe(blockList[i][1][['Start Time', 'End Time', 'Section Title', 'Instructor', 'Room']], 'A2', fit=True)
+
+
 def SFCppt(schedule, location, template):
     # Sort the schedule
     sortedSchedule = schedule.sort_values(by=['Date','Start Time', 'Room'])
     sortedSchedule['Start Time'] = sortedSchedule['Start Time'].dt.strftime('%I:%M %p')
     sortedSchedule['End Time'] = sortedSchedule['End Time'].dt.strftime('%I:%M %p')
     dateList = pd.to_datetime(sortedSchedule['Date'].unique())
-
+    SFCScheduleToGSheets(dateList[0], sortedSchedule.loc[sortedSchedule['Date'] == dateList[0], : ])
     # Go through each day, write out schedule one block per slide. Hide slide if no classes in block.
     for i in range(0,len(dateList)):
         singleDaySched = sortedSchedule.loc[sortedSchedule['Date'] == dateList[i], : ]
@@ -1698,7 +1724,7 @@ def SFCppt(schedule, location, template):
                 font.underline = True
                 font.color.rgb = RGBColor(0xFF, 0xFF, 0x00)
 
-                currentRow +=1
+                currentRow += 1
                 colorToggle = True
 
                 for idx, row in daytime5thFlr.iterrows():
@@ -1722,8 +1748,8 @@ def SFCppt(schedule, location, template):
                         font.name = 'Arial'
                         font.bold = True
                         font.color.rgb = color
-                    currentRow +=1
-                currentRow +=1    
+                    currentRow += 1
+                currentRow += 1    
 
             if not daytime6thFlr.empty:
                 text_frame = table.rows[currentRow].cells[0].text_frame
@@ -1748,7 +1774,7 @@ def SFCppt(schedule, location, template):
                 font.underline = True
                 font.color.rgb = RGBColor(0xFF, 0xFF, 0x00)
 
-                currentRow +=1
+                currentRow += 1
                 colorToggle = True
 
                 for idx, row in daytime6thFlr.iterrows():
@@ -1772,8 +1798,8 @@ def SFCppt(schedule, location, template):
                         font.name = 'Arial'
                         font.bold = True
                         font.color.rgb = color
-                    currentRow +=1
-                currentRow +=1
+                    currentRow += 1
+                currentRow += 1
                 
             if not daytime7thFlr.empty:
                 text_frame = table.rows[currentRow].cells[0].text_frame
@@ -1798,7 +1824,7 @@ def SFCppt(schedule, location, template):
                 font.underline = True
                 font.color.rgb = RGBColor(0xFF, 0xFF, 0x00)
 
-                currentRow +=1
+                currentRow += 1
                 colorToggle = True
 
                 for idx, row in daytime7thFlr.iterrows():
@@ -1822,7 +1848,7 @@ def SFCppt(schedule, location, template):
                         font.name = 'Arial'
                         font.bold = True
                         font.color.rgb = color
-                    currentRow +=1
+                    currentRow += 1
         else:
             slide._element.set('show', '0')
 
@@ -1888,8 +1914,8 @@ def SFCppt(schedule, location, template):
                         font.name = 'Arial'
                         font.bold = True
                         font.color.rgb = color
-                    currentRow +=1
-                currentRow +=1    
+                    currentRow += 1
+                currentRow += 1    
 
             if not evening6thFlr.empty:
                 text_frame = table.rows[currentRow].cells[0].text_frame
@@ -1938,8 +1964,8 @@ def SFCppt(schedule, location, template):
                         font.name = 'Arial'
                         font.bold = True
                         font.color.rgb = color
-                    currentRow +=1
-                currentRow +=1
+                    currentRow += 1
+                currentRow += 1
                 
             if not evening7thFlr.empty:
                 text_frame = table.rows[currentRow].cells[0].text_frame
@@ -1964,7 +1990,7 @@ def SFCppt(schedule, location, template):
                 font.underline = True
                 font.color.rgb = RGBColor(0xFF, 0xFF, 0x00)
 
-                currentRow +=1
+                currentRow += 1
                 colorToggle = True
 
                 for idx, row in evening7thFlr.iterrows():
@@ -1988,7 +2014,7 @@ def SFCppt(schedule, location, template):
                         font.name = 'Arial'
                         font.bold = True
                         font.color.rgb = color
-                    currentRow +=1
+                    currentRow += 1
         else:
             slide._element.set('show', '0')
 
@@ -1996,6 +2022,50 @@ def SFCppt(schedule, location, template):
         prs.save(f"{saveSignsDirectory}\\{location} {dateList[i].strftime('%Y-%m-%d')} {dateList[i].strftime('%A')}.pptx")
     return 1
     
+
+def SFCScheduleToGSheets(date, schedule):
+    schedule['Room'] = schedule['Room'].str.lstrip('Classroom ')
+    daytimeBlock = schedule.loc[schedule['Start Time'].astype('datetime64') < '17:00:00', : ]
+    daytimeBlock = daytimeBlock.sort_values(by=['Room', 'Start Time'])
+    daytime5thFlr = daytimeBlock.loc[daytimeBlock['Room'] <= '515', : ]
+    daytime6thFlr = daytimeBlock.loc[(daytimeBlock['Room'] >= '602') & (daytimeBlock['Room'] <= '613'), : ]
+    daytime7thFlr = daytimeBlock.loc[daytimeBlock['Room'] >= '702', : ]
+
+    eveningBlock = schedule.loc[schedule['Start Time'].astype('datetime64') >= '17:00:00', : ]
+    eveningBlock = eveningBlock.sort_values(by=['Room', 'Start Time'])
+    evening5thFlr = eveningBlock.loc[eveningBlock['Room'] <= '515', : ]
+    evening6thFlr = eveningBlock.loc[(eveningBlock['Room'] >= '602') & (eveningBlock['Room'] <= '613'), : ]
+    evening7thFlr = eveningBlock.loc[eveningBlock['Room'] >= '702', : ]
+
+    blockList = ['Daytime', 'Evening']
+    floorList = [(('5th Floor', daytime5thFlr), ('6th Floor', daytime6thFlr), ('7th Floor', daytime7thFlr)), 
+                (('5th Floor', evening5thFlr), ('6th Floor', evening6thFlr), ('7th Floor', evening7thFlr))]
+
+    dirpath = os.getcwd()
+    client = pygsheets.authorize(service_file=f'{dirpath}/service_file.json')
+    try:
+        sheet = client.open_by_key('1263Aqm2Ay2br6N2n4afYWuqBc7aiO6-liI3tG8ULYdk')
+        # print(f"Opened spreadsheet with id:{sheet.id} and url:{sheet.url}")
+    except pygsheets.SpreadsheetNotFound as error:
+        print(error)
+        return error
+    finally:
+        for i in range(len(blockList)):
+            wks = sheet.worksheet_by_title(blockList[i])
+            wks.clear(start='A1', end=None, fields='*')
+            wks.resize(len(schedule.index)+6, 5)
+            wks.update_value('A1', f"UC Berkeley Extension - {date.strftime('%A')}, {date.strftime('%B %d, %Y').replace(' 0', ' ')}")
+            wks.update_row(2, ['Start Time', 'End Time', 'Section Title', 'Instructor', 'Room'])
+            rowNumber = 3
+            for floor in floorList[i]:
+                if not floor[1].empty:
+                    # print(floor[0])
+                    # print(floor[1])
+                    wks.update_value(f'A{rowNumber}', floor[0])
+                    rowNumber += 1
+                    wks.set_dataframe(floor[1][['Start Time', 'End Time', 'Section Title', 'Instructor', 'Room']], f'A{rowNumber}', copy_head=False, fit=False)
+                    rowNumber += len(floor[1].index) + 1
+
 
 if __name__ == "__main__":
     # os.environ["QT_AUTO_SCREEN_FACTOR"] = "1"

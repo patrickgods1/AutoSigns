@@ -17,8 +17,7 @@ from pptx import Presentation
 from pptx.dml.color import RGBColor
 # Work with Google Sheets
 import pygsheets
-# Work with config file
-import configparser
+
 
 if hasattr(QtCore.Qt, 'AA_EnableHighDpiScaling'):
     QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling, True)

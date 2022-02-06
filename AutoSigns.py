@@ -66,6 +66,8 @@ centerReverse = {
 class Ui_mainWindow(object):
     def __init__(self):
         super().__init__()
+
+        # Initialize settings if setting exists in config.ini file, otherwise set default
         self.settings = QtCore.QSettings("config.ini", QtCore.QSettings.IniFormat)
         global genReport, saveReportToPath, createSigns, existingReportPath, useExistingReport, \
             classroomSignsOutput, dailyScheduleOutput, powerpointOutput, saveSignsDirectory, \
@@ -677,6 +679,7 @@ class Ui_mainWindow(object):
     def exitApp(self):
         reply = QMessageBox.question(None, 'Exit', "Are you sure you want to exit?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         if reply == QMessageBox.Yes:
+            # Save settings state to config.ini file
             self.settings.setValue('genReport', genReport)
             self.settings.setValue('saveReportToPath', saveReportToPath)
             self.settings.setValue('createSigns', createSigns)
@@ -1678,11 +1681,14 @@ def GBCppt(schedule, location, template):
 
 
 def GBCScheduleToGSheets(date, schedule):
+    # Sort the schedule by time of day blocks
     morningBlock = schedule.loc[schedule['Start Time'].astype('datetime64') < '12:00:00', : ]
     afternoonBlock = schedule.loc[(schedule['Start Time'].astype('datetime64') >= '12:00:00') & (schedule['Start Time'].astype('datetime64') < '17:00:00'), : ]
     eveningBlock = schedule.loc[schedule['Start Time'].astype('datetime64') >= '17:00:00', : ]
     blockList = [('Morning', morningBlock),('Afternoon', afternoonBlock),('Evening', eveningBlock)]
     dirpath = os.getcwd()
+
+    # Connect to Google Sheets and update with current schedule
     client = pygsheets.authorize(service_file=f'{dirpath}/service_file.json')
     try:
         sheet = client.open_by_url(GBCScheduleURL)
@@ -2073,6 +2079,7 @@ def SFCppt(schedule, location, template):
     
 
 def SFCScheduleToGSheets(date, schedule):
+    # Sort schedule by time of day blocks and floor
     schedule['Room'] = schedule['Room'].str.lstrip('Classroom ')
     daytimeBlock = schedule.loc[schedule['Start Time'].astype('datetime64') < '17:00:00', : ]
     daytimeBlock = daytimeBlock.sort_values(by=['Room', 'Start Time'])
@@ -2090,6 +2097,7 @@ def SFCScheduleToGSheets(date, schedule):
     floorList = [(('5th Floor', daytime5thFlr), ('6th Floor', daytime6thFlr), ('7th Floor', daytime7thFlr)), 
                 (('5th Floor', evening5thFlr), ('6th Floor', evening6thFlr), ('7th Floor', evening7thFlr))]
 
+    # Connect to Google Sheets and update with current schedule
     dirpath = os.getcwd()
     client = pygsheets.authorize(service_file=f'{dirpath}/service_file.json')
     try:

@@ -17,6 +17,8 @@ from pptx import Presentation
 from pptx.dml.color import RGBColor
 # Work with Google Sheets
 import pygsheets
+# Work with config file
+import configparser
 
 if hasattr(QtCore.Qt, 'AA_EnableHighDpiScaling'):
     QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling, True)
@@ -38,11 +40,15 @@ location = 'Golden Bear Center'
 createSigns = False
 useExistingReport = False
 saveReportToPath = ''
-existingReportPath, _ = ('','')
+existingReportPath = ''
 classroomSignsOutput = False
 dailyScheduleOutput = False
 powerpointOutput = False
 saveSignsDirectory = ''
+uploadGBCSchedule = False
+GBCScheduleURL = ''
+uploadSFCSchedule = False
+SFCScheduleURL = ''
 center = {
         # 'ABSW': {'campus': 'Berkeley - CA0001', 'building': 'UC Berkeley Extension American Baptist Seminary of the West, 2515 Hillegass Ave. - '},
         #   'Belmont': {'campus': 'Belmont - CA0004', 'building': 'UC Berkeley Extension Belmont Center, 1301 Shoreway Rd., Ste. 400 - BEL'},
@@ -58,6 +64,26 @@ centerReverse = {
 
 # Main Window for GUI
 class Ui_mainWindow(object):
+    def __init__(self):
+        super().__init__()
+        self.settings = QtCore.QSettings("config.ini", QtCore.QSettings.IniFormat)
+        global genReport, saveReportToPath, createSigns, existingReportPath, useExistingReport, \
+            classroomSignsOutput, dailyScheduleOutput, powerpointOutput, saveSignsDirectory, \
+            uploadGBCSchedule, GBCScheduleURL, uploadSFCSchedule, SFCScheduleURL
+        genReport = self.settings.value('genReport', True, type=bool)
+        saveReportToPath = self.settings.value('saveReportToPath', os.path.dirname(os.path.abspath(__file__)), type=str)
+        createSigns = self.settings.value('createSigns', False, type=bool)
+        # existingReportPath = self.settings.value('existingReportPath', saveReportToPath, type=str)
+        useExistingReport = self.settings.value('useExistingReport', False, type=bool)
+        classroomSignsOutput = self.settings.value('classroomSignsOutput', False, type=bool)
+        dailyScheduleOutput = self.settings.value('dailyScheduleOutput', False, type=bool)
+        powerpointOutput = self.settings.value('powerpointOutput', False, type=bool)
+        saveSignsDirectory = self.settings.value('saveSignsDirectory', saveReportToPath, type=str)
+        uploadGBCSchedule = self.settings.value('uploadGBCSchedule', True, type=bool)
+        uploadSFCSchedule = self.settings.value('uploadSFCSchedule', True, type=bool)
+        GBCScheduleURL = self.settings.value('GBCScheduleURL', '', type=str)
+        SFCScheduleURL = self.settings.value('SFCScheduleURL', '', type=str)
+
     def setupUi(self, mainWindow):
         global startDate, endDate
         mainWindow.setObjectName("mainWindow")
@@ -87,7 +113,7 @@ class Ui_mainWindow(object):
         font.setWeight(75)
         self.genReportBox.setFont(font)
         self.genReportBox.setCheckable(True)
-        self.genReportBox.setChecked(False)
+        self.genReportBox.setChecked(genReport)
         self.genReportBox.setObjectName("genReportBox")
         self.genReportLayout = QtWidgets.QVBoxLayout(self.genReportBox)
         self.genReportLayout.setSizeConstraint(QtWidgets.QLayout.SetDefaultConstraint)
@@ -207,8 +233,6 @@ class Ui_mainWindow(object):
         self.selectLocation.setObjectName("selectLocation")
         self.selectLocation.addItem("")
         self.selectLocation.addItem("")
-        # self.selectLocation.addItem("")
-        # self.selectLocation.addItem("")
         self.locationLayout.addWidget(self.selectLocation)
         self.genReportLayout.addLayout(self.locationLayout)
         self.saveReportPathLayout = QtWidgets.QHBoxLayout()
@@ -284,7 +308,7 @@ class Ui_mainWindow(object):
         font.setWeight(75)
         self.createSignsBox.setFont(font)
         self.createSignsBox.setCheckable(True)
-        self.createSignsBox.setChecked(False)
+        self.createSignsBox.setChecked(createSigns)
         self.createSignsBox.setObjectName("createSignsBox")
         self.createSignsBoxLayout = QtWidgets.QVBoxLayout(self.createSignsBox)
         self.createSignsBoxLayout.setObjectName("createSignsBoxLayout")
@@ -304,7 +328,7 @@ class Ui_mainWindow(object):
         font.setWeight(75)
         self.useExistingReportBox.setFont(font)
         self.useExistingReportBox.setCheckable(True)
-        self.useExistingReportBox.setChecked(False)
+        self.useExistingReportBox.setChecked(useExistingReport)
         self.useExistingReportBox.setObjectName("useExistingReportBox")
         self.useExistingReportLayout = QtWidgets.QVBoxLayout(self.useExistingReportBox)
         self.useExistingReportLayout.setObjectName("useExistingReportLayout")
@@ -424,7 +448,7 @@ class Ui_mainWindow(object):
         font.setUnderline(False)
         font.setWeight(75)
         self.classroomSignsCheckbox.setFont(font)
-        self.classroomSignsCheckbox.setChecked(False)
+        self.classroomSignsCheckbox.setChecked(classroomSignsOutput)
         self.classroomSignsCheckbox.setObjectName("classroomSignsCheckbox")
         self.outputOptionsLayout.addWidget(self.classroomSignsCheckbox)
         self.dailyScheduleCheckbox = QtWidgets.QCheckBox(self.createSignsBox)
@@ -442,7 +466,7 @@ class Ui_mainWindow(object):
         font.setUnderline(False)
         font.setWeight(75)
         self.dailyScheduleCheckbox.setFont(font)
-        self.dailyScheduleCheckbox.setChecked(False)
+        self.dailyScheduleCheckbox.setChecked(dailyScheduleOutput)
         self.dailyScheduleCheckbox.setObjectName("dailyScheduleCheckbox")
         self.outputOptionsLayout.addWidget(self.dailyScheduleCheckbox)
         self.powerpointCheckbox = QtWidgets.QCheckBox(self.createSignsBox)
@@ -460,7 +484,7 @@ class Ui_mainWindow(object):
         font.setUnderline(False)
         font.setWeight(75)
         self.powerpointCheckbox.setFont(font)
-        self.powerpointCheckbox.setChecked(False)
+        self.powerpointCheckbox.setChecked(powerpointOutput)
         self.powerpointCheckbox.setObjectName("powerpointCheckbox")
         self.outputOptionsLayout.addWidget(self.powerpointCheckbox)
         self.createSignsBoxLayout.addLayout(self.outputOptionsLayout)
@@ -525,14 +549,15 @@ class Ui_mainWindow(object):
         self.selectLocation.setItemText(0, _translate("mainWindow", "Golden Bear Center"))
         self.selectLocation.setItemText(1, _translate("mainWindow", "San Francisco Center"))
         self.saveReportPathLabel.setText(_translate("mainWindow", "Save Path:"))
-        self.selectSaveReportPath.setText(_translate("mainWindow", ""))
+        # self.selectSaveReportPath.setText(_translate("mainWindow", ""))
+        self.selectSaveReportPath.setText(_translate("mainWindow", saveReportToPath))
         self.browseSaveReportButton.setText(_translate("mainWindow", "Browse"))
         self.createSignsBox.setTitle(_translate("mainWindow", "Create Signs"))
         self.useExistingReportBox.setTitle(_translate("mainWindow", "Use existing Destiny Report"))
         self.selectExistingReportPath.setText(_translate("mainWindow", ""))
         self.browseExistingReportButton.setText(_translate("mainWindow", "Browse"))
         self.saveSignsPathLabel.setText(_translate("mainWindow", "Save Path:"))
-        self.selectSaveSignsPath.setText(_translate("mainWindow", ""))
+        self.selectSaveSignsPath.setText(_translate("mainWindow", saveSignsDirectory))
         self.browseSaveSignsButton.setText(_translate("mainWindow", "Browse"))
         self.classroomSignsCheckbox.setText(_translate("mainWindow", "Classroom Sign"))
         self.dailyScheduleCheckbox.setText(_translate("mainWindow", "Daily Schedule"))
@@ -584,8 +609,10 @@ class Ui_mainWindow(object):
 
     def saveReportDirectory(self):
         global saveReportToPath
-        saveReportToPath = os.path.normpath(QFileDialog.getExistingDirectory(None, 'Save Destiny Report to'))
-        self.selectSaveReportPath.setText(saveReportToPath)
+        path = os.path.normpath(QFileDialog.getExistingDirectory(None, 'Save Destiny Report to', saveReportToPath))
+        if path and path != '.':
+            saveReportToPath = path
+            self.selectSaveReportPath.setText(saveReportToPath)
 
     def createSignsState(self):
         global createSigns, useExistingReport
@@ -614,9 +641,10 @@ class Ui_mainWindow(object):
 
     def existingReportPath(self):
         global existingReportPath
-        existingReportPath, _ = QFileDialog.getOpenFileName(None, "Select SectionScheduleDailySummary.xls", "", "Excel Files (*.xls)")
-        existingReportPath = os.path.normpath(existingReportPath)
-        self.selectExistingReportPath.setText(existingReportPath)
+        path, _ = QFileDialog.getOpenFileName(None, "Select SectionScheduleDailySummary.xls", saveReportToPath, "Excel Files (*.xls)")
+        if path and path != '.':
+            existingReportPath = os.path.normpath(path)
+            self.selectExistingReportPath.setText(existingReportPath)
 
     def classroomSignsState(self):
         global classroomSignsOutput
@@ -641,12 +669,27 @@ class Ui_mainWindow(object):
 
     def saveSignsPath(self):
         global saveSignsDirectory
-        saveSignsDirectory = os.path.normpath(QFileDialog.getExistingDirectory(None, 'Save Signs to'))
-        self.selectSaveSignsPath.setText(saveSignsDirectory)
+        path = os.path.normpath(QFileDialog.getExistingDirectory(None, 'Save Signs to', saveSignsDirectory))
+        if path and path != '.':
+            saveSignsDirectory = path
+            self.selectSaveSignsPath.setText(saveSignsDirectory)
 
     def exitApp(self):
         reply = QMessageBox.question(None, 'Exit', "Are you sure you want to exit?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         if reply == QMessageBox.Yes:
+            self.settings.setValue('genReport', genReport)
+            self.settings.setValue('saveReportToPath', saveReportToPath)
+            self.settings.setValue('createSigns', createSigns)
+            self.settings.setValue('useExistingReport', useExistingReport)
+            # self.settings.setValue('existingReportPath', existingReportPath)
+            self.settings.setValue('classroomSignsOutput', classroomSignsOutput)
+            self.settings.setValue('dailyScheduleOutput', dailyScheduleOutput)
+            self.settings.setValue('powerpointOutput', powerpointOutput)
+            self.settings.setValue('saveSignsDirectory', saveSignsDirectory)
+            self.settings.setValue('uploadGBCSchedule', uploadGBCSchedule)
+            self.settings.setValue('GBCScheduleURL', GBCScheduleURL)
+            self.settings.setValue('uploadSFCSchedule', uploadSFCSchedule)
+            self.settings.setValue('SFCScheduleURL', SFCScheduleURL)
             sys.exit()
         else:
             pass
@@ -1167,7 +1210,8 @@ def GBCDailySchedule(schedule, location):
             'font_color': '#000000'
             })
 
-        worksheet.write(0, 0, f"UC Berkeley Extension {dateList[i].strftime('%A')} {dateList[i].strftime('%B %d, %Y').replace(' 0', ' ')}", titleFormat)
+        worksheet.write(0, 0, f"UC Berkeley Extension", titleFormat)
+        worksheet.write(0, 4, f"{dateList[i].strftime('%A')} {dateList[i].strftime('%B %d, %Y').replace(' 0', ' ')}", titleFormat)
         for col_num, value in enumerate(['Start Time','End Time','Section Number','Section Title','Instructor','Room']):
             worksheet.write(2, col_num, value, headerFormat)
 
@@ -1491,7 +1535,9 @@ def GBCppt(schedule, location, template):
     sortedSchedule['End Time'] = sortedSchedule['End Time'].dt.strftime('%I:%M %p')
     dateList = pd.to_datetime(sortedSchedule['Date'].unique())
     
-    GBCScheduleToGSheets(dateList[0], sortedSchedule.loc[sortedSchedule['Date'] == dateList[0], : ])
+    # Upload GBC schedule if setting and URL are set in config.ini file
+    if uploadGBCSchedule and GBCScheduleURL:
+        GBCScheduleToGSheets(dateList[0], sortedSchedule.loc[sortedSchedule['Date'] == dateList[0], : ])
 
     # Go through each day, write out schedule one block per slide. Hide slide if no classes in block.
     for i in range(0,len(dateList)):
@@ -1639,8 +1685,7 @@ def GBCScheduleToGSheets(date, schedule):
     dirpath = os.getcwd()
     client = pygsheets.authorize(service_file=f'{dirpath}/service_file.json')
     try:
-        sheet = client.open_by_key('1ooteC1nuN8wkAOqdPXj6zjtLBoMVKRs4gqlOCBsmFzU')
-        # print(f"Opened spreadsheet with id:{sheet.id} and url:{sheet.url}")
+        sheet = client.open_by_url(GBCScheduleURL)
     except pygsheets.SpreadsheetNotFound as error:
         print(error)
         return error
@@ -1658,7 +1703,11 @@ def SFCppt(schedule, location, template):
     sortedSchedule['Start Time'] = sortedSchedule['Start Time'].dt.strftime('%I:%M %p')
     sortedSchedule['End Time'] = sortedSchedule['End Time'].dt.strftime('%I:%M %p')
     dateList = pd.to_datetime(sortedSchedule['Date'].unique())
-    SFCScheduleToGSheets(dateList[0], sortedSchedule.loc[sortedSchedule['Date'] == dateList[0], : ])
+
+    # Upload SFC schedule if setting and URL are set in config.ini file
+    if uploadSFCSchedule and SFCScheduleURL:
+        SFCScheduleToGSheets(dateList[0], sortedSchedule.loc[sortedSchedule['Date'] == dateList[0], : ])
+
     # Go through each day, write out schedule one block per slide. Hide slide if no classes in block.
     for i in range(0,len(dateList)):
         singleDaySched = sortedSchedule.loc[sortedSchedule['Date'] == dateList[i], : ]
@@ -2044,8 +2093,7 @@ def SFCScheduleToGSheets(date, schedule):
     dirpath = os.getcwd()
     client = pygsheets.authorize(service_file=f'{dirpath}/service_file.json')
     try:
-        sheet = client.open_by_key('1263Aqm2Ay2br6N2n4afYWuqBc7aiO6-liI3tG8ULYdk')
-        # print(f"Opened spreadsheet with id:{sheet.id} and url:{sheet.url}")
+        sheet = client.open_by_url(SFCScheduleURL)
     except pygsheets.SpreadsheetNotFound as error:
         print(error)
         return error
@@ -2059,8 +2107,6 @@ def SFCScheduleToGSheets(date, schedule):
             rowNumber = 3
             for floor in floorList[i]:
                 if not floor[1].empty:
-                    # print(floor[0])
-                    # print(floor[1])
                     wks.update_value(f'A{rowNumber}', floor[0])
                     rowNumber += 1
                     wks.set_dataframe(floor[1][['Start Time', 'End Time', 'Section Title', 'Instructor', 'Room']], f'A{rowNumber}', copy_head=False, fit=False)

@@ -1,5 +1,6 @@
 pandas
 pyinstaller
+pygsheets
 pyqt5
 python-docx
 python-pptx

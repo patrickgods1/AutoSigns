@@ -8,6 +8,7 @@ AutoSigns is an application designed to automate the following:
 	* Classroom signs
     * Daily Schedules
     * PowerPoint slide deck for TV display
+4. If enabled, write the daiy schedule report to Google Sheets for use with linked table in Google Slides and updated using Google App Script.
 
 ## Getting Started
 These instructions will help you get started with using the application.
@@ -18,6 +19,27 @@ The following must be installed:
 * Microsoft Excel
 * Microsoft PowerPoint
 * Microsoft Word
+* Enable Google Drive API and Sheets API in Google Developer Console
+    * Create a service account and save credential file as service_file.json in project root directory
+    * Share/allow the service account access to Google Calendar and Google Drive
+* config.ini file with Google Sheets URL to write to
+
+### config.ini file
+```
+[General]
+genReport=true
+saveReportToPath=
+createSigns=true
+useExistingReport=false
+classroomSignsOutput=true
+dailyScheduleOutput=true
+powerpointOutput=true
+saveSignsDirectory=
+uploadGBCSchedule=true
+GBCScheduleURL=
+uploadSFCSchedule=true
+SFCScheduleURL=
+```
 
 ### Usage
 1. Check the box next to the function(s) you would like to use
@@ -42,6 +64,7 @@ These instructions will get you a copy of the project up and running on your loc
 * [PyQt5](https://pypi.org/project/PyQt5/) - Framework used to create GUI.
 * [QtDesigner](http://doc.qt.io/qt-5/qtdesigner-manual.html) - GUI builder tool.
 * [PyInstaller](https://www.pyinstaller.org/) - Used to create executable for release.
+* [pygsheets](https://pygsheets.readthedocs.io/en/latest/) - Google Sheets API wrapper used.
 
 ### Running the Script
 Run the following command to installer all the required Python modules:

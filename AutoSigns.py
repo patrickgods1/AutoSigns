@@ -85,6 +85,7 @@ class Ui_mainWindow(object):
         GBCScheduleURL = self.settings.value('GBCScheduleURL', '', type=str)
         SFCScheduleURL = self.settings.value('SFCScheduleURL', '', type=str)
 
+
     def setupUi(self, mainWindow):
         global startDate, endDate
         mainWindow.setObjectName("mainWindow")
@@ -799,7 +800,6 @@ def genReportFunction():
 
     # Download Destiny Report
     try:
-        # chromedriver = os.path.join(current_folder,"chromedriver.exe")
         browser = webdriver.Chrome(executable_path=ChromeDriverManager().install(), options=chrome_options)
         browser.get('https://berkeleysv.destinysolutions.com')
         WebDriverWait(browser,3600).until(EC.presence_of_element_located((By.ID,"main-area-body")))
@@ -818,13 +818,11 @@ def genReportFunction():
         generateReportElm.click()
         while not os.path.exists(f"{saveReportToPath}\\SectionScheduleDailySummary.xls"):
             time.sleep(1)
-        # browser.close()
         browser.quit()
         return 1
     except WebDriverException:
         browser.quit()
         return 0
-    #     # print(f'Could not download report. Try again later.')
     
 
 def createSignsFunction(reportPath):
@@ -1168,7 +1166,7 @@ def GBCDailySchedule(schedule, location):
     else:
         writer = pd.ExcelWriter(f"{saveSignsDirectory}\\{location} {dateList[0].strftime('%Y-%m-%d')} {dateList[0].strftime('%A')} to {dateList[-1].strftime('%Y-%m-%d')} {dateList[-1].strftime('%A')}.xlsx", engine='xlsxwriter')
     workbook = writer.book
-    # loop through each day
+    # Loop through each day
     for i in range(0, len(dateList)):
         worksheet = workbook.add_worksheet(dateList[i].strftime('%Y-%m-%d'))
         worksheet.set_landscape()       # Page orientation as landscape.
@@ -1302,7 +1300,7 @@ def SFCDailySchedule(schedule, location):
     else:    
         writer = pd.ExcelWriter(f"{saveSignsDirectory}\\{location} {dateList[0].strftime('%Y-%m-%d')} {dateList[0].strftime('%A')} to {dateList[-1].strftime('%Y-%m-%d')} {dateList[-1].strftime('%A')}.xlsx", engine='xlsxwriter')
     workbook = writer.book
-    # loop through each day
+    # Loop through each day
     for i in range(0, len(dateList)):
         worksheet = workbook.add_worksheet(dateList[i].strftime('%Y-%m-%d'))
         worksheet.set_portrait()       # Page orientation as landscape.

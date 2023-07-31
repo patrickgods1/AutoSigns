@@ -32,16 +32,15 @@ Note: Runtime may vary depending on the number of days/classes that need the sig
 
 -------- Built With --------
 
-1. Python 3.X standard library - Used for basic logic flow.
+1. Python 3.11 standard library - Used for basic logic flow.
 2. Python Pandas library - Data framework for reading and manipulating data.
 3. python-docx library - Used to create Microsoft Word documents (Classroom signs)
-4. Python Selenium library - Web crawling automation framework.
-5. Webdriver-Manager - Framework to manage webdriver version compatible with version of browser
-6. xlsxwriter - Used to create Microsoft Excel documents (Daily Schedule)
-7. python-pptx library - Used to create Microsoft PowerPoint documents
-8. PyQt5 - GUI framework.
-9. QtDesigner - GUI builder tool.
-10. PyInstaller - Bundles Python applications and all its dependencies into an executable.
+4. Python Selenium library - Web crawling automation framework and Chrome webdriver manager.
+5. xlsxwriter - Used to create Microsoft Excel documents (Daily Schedule)
+6. python-pptx library - Used to create Microsoft PowerPoint documents
+7. PyQt5 - GUI framework.
+8. QtDesigner - GUI builder tool.
+9. PyInstaller - Bundles Python applications and all its dependencies into an executable.
 
 -------- Authors --------
 

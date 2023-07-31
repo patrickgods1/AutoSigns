@@ -53,12 +53,11 @@ Note: Runtime may vary depending on the number of days/classes that need the sig
 These instructions will get you a copy of the project up and running on your local machine for development.
 
 ### Built With
-* [Python 3.6](https://docs.python.org/3/) - The scripting language used.
+* [Python 3.11](https://docs.python.org/3/) - The scripting language used.
 * [Pandas](https://pandas.pydata.org/) - Data structure/anaylsis tool used.
 * [python-docx](https://python-docx.readthedocs.io/en/latest/) - Used to create Microsoft Word documents (Classroom signs)
-* [Selenium](https://selenium-python.readthedocs.io/) - Web crawling automation framework.
+* [Selenium](https://selenium-python.readthedocs.io/) - Web crawling automation framework and Chrome webdriver manager.
 * [Chrome Webdriver](http://chromedriver.chromium.org/downloads) - Webdriver for Chrome browser. Use to control automation with Selenium.
-* [Webdriver-Manager](https://github.com/SergeyPirogov/webdriver_manager) - Framework to manage webdriver version compatible with version of browser.
 * [xlsxwriter](https://xlsxwriter.readthedocs.io/) - Used to create Microsoft Excel documents (Daily Schedule)
 * [python-pptx](https://python-pptx.readthedocs.io/en/latest/) - Used to create Microsoft PowerPoint documents
 * [PyQt5](https://pypi.org/project/PyQt5/) - Framework used to create GUI.

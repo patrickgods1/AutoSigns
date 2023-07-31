@@ -25,10 +25,10 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 # Work with web browser automation
 from selenium import webdriver
 from selenium.common.exceptions import WebDriverException
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-from webdriver_manager.chrome import ChromeDriverManager
 
 if hasattr(QtCore.Qt, "AA_EnableHighDpiScaling"):
     QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling, True)
@@ -1034,6 +1034,7 @@ class Ui_mainWindow(object):
 
     def genReportFunction(self) -> int:
         # Set Chrome defaults to automate download
+        service = Service()
         chrome_options = webdriver.ChromeOptions()
         chrome_options.add_experimental_option(
             "prefs",
@@ -1051,9 +1052,10 @@ class Ui_mainWindow(object):
 
         # Download Destiny Report
         try:
-            browser = webdriver.Chrome(
-                executable_path=ChromeDriverManager().install(), options=chrome_options
-            )
+            # browser = webdriver.Chrome(
+            #     executable_path=ChromeDriverManager().install(), options=chrome_options
+            # )
+            browser = webdriver.Chrome(service=service, options=chrome_options)
             browser.get("https://berkeleysv.destinysolutions.com")
             WebDriverWait(browser, 3600).until(
                 EC.presence_of_element_located((By.ID, "main-area-body"))
@@ -1061,17 +1063,17 @@ class Ui_mainWindow(object):
             browser.get(
                 "https://berkeleysv.destinysolutions.com/srs/reporting/sectionScheduleDailySummary.do?method=load"  # noqa: E501
             )
-            startDateElm = browser.find_element_by_id("startDateRecordString")
+            startDateElm = browser.find_element("id", "startDateRecordString")
             startDateElm.send_keys(self.startDate)
-            endDateElm = browser.find_element_by_id("endDateRecordString")
+            endDateElm = browser.find_element("id", "endDateRecordString")
             endDateElm.send_keys(self.endDate)
-            campusElm = browser.find_element_by_name("scheduleBlock.campusId")
+            campusElm = browser.find_element("name", "scheduleBlock.campusId")
             campusElm.send_keys(self.center[self.location]["campus"])
-            buildingElm = browser.find_element_by_name("scheduleBlock.buildingId")
+            buildingElm = browser.find_element("name", "scheduleBlock.buildingId")
             buildingElm.send_keys(self.center[self.location]["building"])
-            outputTypeElm = browser.find_element_by_name("outputType")
+            outputTypeElm = browser.find_element("name", "outputType")
             outputTypeElm.send_keys("Output to XLS (Export)")
-            generateReportElm = browser.find_element_by_id("processReport")
+            generateReportElm = browser.find_element("id", "processReport")
             generateReportElm.click()
             while not os.path.exists(
                 f"{self.saveReportToPath}\\SectionScheduleDailySummary.xls"
@@ -1109,7 +1111,12 @@ class Ui_mainWindow(object):
             header=6,
             skipfooter=1,
             usecols=[1, 4, 6, 11, 13, 15, 22],
-            parse_dates=["Start Time", "End Time"],
+            parse_dates=[1, "Start Time", "End Time"],
+            date_format={
+                "Date": "%Y/%m/%d %H:%M:%S",
+                "Start Time": "%I:%M%p",
+                "End Time": "%I:%M%p",
+            },
         )
         schedule = schedule[schedule["Approval Status"] == "Final Approval"].copy()
 
@@ -1448,7 +1455,12 @@ class Ui_mainWindow(object):
             header=6,
             skipfooter=1,
             usecols=[1, 4, 6, 9, 11, 12, 13, 15, 22],
-            parse_dates=["Start Time", "End Time"],
+            parse_dates=[1, "Start Time", "End Time"],
+            date_format={
+                "Date": "%Y/%m/%d %H:%M:%S",
+                "Start Time": "%I:%M%p",
+                "End Time": "%I:%M%p",
+            },
         )
         schedule = schedule[schedule["Approval Status"] == "Final Approval"].copy()
 
@@ -1466,11 +1478,8 @@ class Ui_mainWindow(object):
 
     def GBCDailySchedule(self, schedule: pd.DataFrame, location: str) -> int:
         sortedSchedule = schedule.sort_values(by=["Date", "Start Time", "Room"])
-        sortedSchedule["Start Time"] = sortedSchedule["Start Time"].dt.strftime(
-            "%I:%M %p"
-        )
-        sortedSchedule["End Time"] = sortedSchedule["End Time"].dt.strftime("%I:%M %p")
-        dateList = pd.to_datetime(sortedSchedule["Date"].unique())
+        sortedSchedule = sortedSchedule.fillna("")
+        dateList = sortedSchedule["Date"].dt.date.unique()
 
         if len(dateList) == 1:
             writer = pd.ExcelWriter(
@@ -1565,19 +1574,39 @@ class Ui_mainWindow(object):
                 worksheet.write(2, col_num, value, headerFormat)
 
             singleDaySched = sortedSchedule.loc[
-                sortedSchedule["Date"] == dateList[i], :
+                sortedSchedule["Date"].dt.date == dateList[i], :
             ]
-            morningBlock = singleDaySched.loc[
-                singleDaySched["Start Time"].astype("datetime64") < "12:00:00", :
-            ]
-            afternoonBlock = singleDaySched.loc[
-                (singleDaySched["Start Time"].astype("datetime64") >= "12:00:00")
-                & (singleDaySched["Start Time"].astype("datetime64") < "17:00:00"),
-                :,
-            ]
-            eveningBlock = singleDaySched.loc[
-                singleDaySched["Start Time"].astype("datetime64") >= "17:00:00", :
-            ]
+
+            morningBlock = (
+                singleDaySched.set_index("Start Time")
+                .between_time("00:00", "12:00", inclusive="left")
+                .reset_index()
+            )
+            afternoonBlock = (
+                singleDaySched.set_index("Start Time")
+                .between_time("12:00", "17:00", inclusive="left")
+                .reset_index()
+            )
+            eveningBlock = (
+                singleDaySched.set_index("Start Time")
+                .between_time("17:00", "00:00", inclusive="left")
+                .reset_index()
+            )
+
+            morningBlock["Start Time"] = morningBlock["Start Time"].dt.strftime(
+                "%I:%M %p"
+            )
+            morningBlock["End Time"] = morningBlock["End Time"].dt.strftime("%I:%M %p")
+            afternoonBlock["Start Time"] = afternoonBlock["Start Time"].dt.strftime(
+                "%I:%M %p"
+            )
+            afternoonBlock["End Time"] = afternoonBlock["End Time"].dt.strftime(
+                "%I:%M %p"
+            )
+            eveningBlock["Start Time"] = eveningBlock["Start Time"].dt.strftime(
+                "%I:%M %p"
+            )
+            eveningBlock["End Time"] = eveningBlock["End Time"].dt.strftime("%I:%M %p")
 
             excelRow = 3
             if not morningBlock.empty:
@@ -1670,11 +1699,8 @@ class Ui_mainWindow(object):
 
     def SFCDailySchedule(self, schedule: pd.DataFrame, location: str) -> int:
         sortedSchedule = schedule.sort_values(by=["Date", "Start Time", "Room"])
-        sortedSchedule["Start Time"] = sortedSchedule["Start Time"].dt.strftime(
-            "%I:%M %p"
-        )
-        sortedSchedule["End Time"] = sortedSchedule["End Time"].dt.strftime("%I:%M %p")
-        dateList = pd.to_datetime(sortedSchedule["Date"].unique())
+        sortedSchedule = sortedSchedule.fillna("")
+        dateList = sortedSchedule["Date"].dt.date.unique()
 
         if len(dateList) == 1:
             writer = pd.ExcelWriter(
@@ -1782,12 +1808,18 @@ class Ui_mainWindow(object):
 
             # Filter by daytime and evening, then by floor
             singleDaySched = sortedSchedule.loc[
-                sortedSchedule["Date"] == dateList[i], :
+                sortedSchedule["Date"].dt.date == dateList[i], :
             ]
-            daytimeBlock = singleDaySched.loc[
-                singleDaySched["Start Time"].astype("datetime64") < "17:00:00", :
-            ]
+            daytimeBlock = (
+                singleDaySched.set_index("Start Time")
+                .between_time("00:00", "17:00", inclusive="left")
+                .reset_index()
+            )
             daytimeBlock = daytimeBlock.sort_values(by=["Room", "Start Time"])
+            daytimeBlock["Start Time"] = daytimeBlock["Start Time"].dt.strftime(
+                "%I:%M %p"
+            )
+            daytimeBlock["End Time"] = daytimeBlock["End Time"].dt.strftime("%I:%M %p")
             daytime5thFlr = daytimeBlock.loc[daytimeBlock["Room"] <= "Classroom 515", :]
             daytime6thFlr = daytimeBlock.loc[
                 (daytimeBlock["Room"] >= "Classroom 602")
@@ -1796,9 +1828,15 @@ class Ui_mainWindow(object):
             ]
             daytime7thFlr = daytimeBlock.loc[daytimeBlock["Room"] >= "Classroom 702", :]
 
-            eveningBlock = singleDaySched.loc[
-                singleDaySched["Start Time"].astype("datetime64") >= "17:00:00", :
-            ]
+            eveningBlock = (
+                singleDaySched.set_index("Start Time")
+                .between_time("17:00", "00:00", inclusive="left")
+                .reset_index()
+            )
+            eveningBlock["Start Time"] = eveningBlock["Start Time"].dt.strftime(
+                "%I:%M %p"
+            )
+            eveningBlock["End Time"] = eveningBlock["End Time"].dt.strftime("%I:%M %p")
             eveningBlock = eveningBlock.sort_values(by=["Room", "Start Time"])
             evening5thFlr = eveningBlock.loc[eveningBlock["Room"] <= "Classroom 515", :]
             evening6thFlr = eveningBlock.loc[
@@ -2060,7 +2098,12 @@ class Ui_mainWindow(object):
             header=6,
             skipfooter=1,
             usecols=[1, 4, 6, 9, 11, 12, 13, 15, 22],
-            parse_dates=["Start Time", "End Time"],
+            parse_dates=[1, "Start Time", "End Time"],
+            date_format={
+                "Date": "%Y/%m/%d %H:%M:%S",
+                "Start Time": "%I:%M%p",
+                "End Time": "%I:%M%p",
+            },
         )
         schedule = schedule[schedule["Approval Status"] == "Final Approval"].copy()
 
@@ -2080,35 +2123,52 @@ class Ui_mainWindow(object):
     def GBCppt(self, schedule: pd.DataFrame, location: str, template: str) -> int:
         # Sort the schedule
         sortedSchedule = schedule.sort_values(by=["Date", "Start Time", "Room"])
-        sortedSchedule["Start Time"] = sortedSchedule["Start Time"].dt.strftime(
-            "%I:%M %p"
-        )
-        sortedSchedule["End Time"] = sortedSchedule["End Time"].dt.strftime("%I:%M %p")
-        dateList = pd.to_datetime(sortedSchedule["Date"].unique())
+        sortedSchedule = sortedSchedule.fillna("")
+        dateList = sortedSchedule["Date"].dt.date.unique()
 
         # Upload GBC schedule if setting and URL are set in config.ini file
         if self.uploadGBCSchedule and self.GBCScheduleURL:
             self.GBCScheduleToGSheets(
                 dateList[0],
-                sortedSchedule.loc[sortedSchedule["Date"] == dateList[0], :],
+                sortedSchedule.loc[sortedSchedule["Date"].dt.date == dateList[0], :],
             )
 
         # Write out schedule one block per slide. Hide slide if no classes.
         for i in range(0, len(dateList)):
             singleDaySched = sortedSchedule.loc[
-                sortedSchedule["Date"] == dateList[i], :
+                sortedSchedule["Date"].dt.date == dateList[i], :
             ]
-            morningBlock = singleDaySched.loc[
-                singleDaySched["Start Time"].astype("datetime64") < "12:00:00", :
-            ]
-            afternoonBlock = singleDaySched.loc[
-                (singleDaySched["Start Time"].astype("datetime64") >= "12:00:00")
-                & (singleDaySched["Start Time"].astype("datetime64") < "17:00:00"),
-                :,
-            ]
-            eveningBlock = singleDaySched.loc[
-                singleDaySched["Start Time"].astype("datetime64") >= "17:00:00", :
-            ]
+
+            morningBlock = (
+                singleDaySched.set_index("Start Time")
+                .between_time("00:00", "12:00", inclusive="left")
+                .reset_index()
+            )
+            afternoonBlock = (
+                singleDaySched.set_index("Start Time")
+                .between_time("12:00", "17:00", inclusive="left")
+                .reset_index()
+            )
+            eveningBlock = (
+                singleDaySched.set_index("Start Time")
+                .between_time("17:00", "00:00", inclusive="left")
+                .reset_index()
+            )
+
+            morningBlock["Start Time"] = morningBlock["Start Time"].dt.strftime(
+                "%I:%M %p"
+            )
+            morningBlock["End Time"] = morningBlock["End Time"].dt.strftime("%I:%M %p")
+            afternoonBlock["Start Time"] = afternoonBlock["Start Time"].dt.strftime(
+                "%I:%M %p"
+            )
+            afternoonBlock["End Time"] = afternoonBlock["End Time"].dt.strftime(
+                "%I:%M %p"
+            )
+            eveningBlock["Start Time"] = eveningBlock["Start Time"].dt.strftime(
+                "%I:%M %p"
+            )
+            eveningBlock["End Time"] = eveningBlock["End Time"].dt.strftime("%I:%M %p")
 
             prs = Presentation(template)
 
@@ -2301,17 +2361,31 @@ class Ui_mainWindow(object):
         self, date: datetime.datetime, schedule: pd.DataFrame
     ) -> pygsheets.PyGsheetsException:
         # Sort the schedule by time of day blocks
-        morningBlock = schedule.loc[
-            schedule["Start Time"].astype("datetime64") < "12:00:00", :
-        ]
-        afternoonBlock = schedule.loc[
-            (schedule["Start Time"].astype("datetime64") >= "12:00:00")
-            & (schedule["Start Time"].astype("datetime64") < "17:00:00"),
-            :,
-        ]
-        eveningBlock = schedule.loc[
-            schedule["Start Time"].astype("datetime64") >= "17:00:00", :
-        ]
+        morningBlock = (
+            schedule.set_index("Start Time")
+            .between_time("00:00", "12:00", inclusive="left")
+            .reset_index()
+        )
+        afternoonBlock = (
+            schedule.set_index("Start Time")
+            .between_time("12:00", "17:00", inclusive="left")
+            .reset_index()
+        )
+        eveningBlock = (
+            schedule.set_index("Start Time")
+            .between_time("17:00", "00:00", inclusive="left")
+            .reset_index()
+        )
+
+        morningBlock["Start Time"] = morningBlock["Start Time"].dt.strftime("%I:%M %p")
+        morningBlock["End Time"] = morningBlock["End Time"].dt.strftime("%I:%M %p")
+        afternoonBlock["Start Time"] = afternoonBlock["Start Time"].dt.strftime(
+            "%I:%M %p"
+        )
+        afternoonBlock["End Time"] = afternoonBlock["End Time"].dt.strftime("%I:%M %p")
+        eveningBlock["Start Time"] = eveningBlock["Start Time"].dt.strftime("%I:%M %p")
+        eveningBlock["End Time"] = eveningBlock["End Time"].dt.strftime("%I:%M %p")
+
         blockList = [
             ("Morning", morningBlock),
             ("Afternoon", afternoonBlock),
@@ -2354,27 +2428,30 @@ class Ui_mainWindow(object):
     def SFCppt(self, schedule: pd.DataFrame, location: str, template: str) -> int:
         # Sort the schedule
         sortedSchedule = schedule.sort_values(by=["Date", "Start Time", "Room"])
-        sortedSchedule["Start Time"] = sortedSchedule["Start Time"].dt.strftime(
-            "%I:%M %p"
-        )
-        sortedSchedule["End Time"] = sortedSchedule["End Time"].dt.strftime("%I:%M %p")
-        dateList = pd.to_datetime(sortedSchedule["Date"].unique())
+        sortedSchedule = sortedSchedule.fillna("")
+        dateList = sortedSchedule["Date"].dt.date.unique()
 
         # Upload SFC schedule if setting and URL are set in config.ini file
         if self.uploadSFCSchedule and self.SFCScheduleURL:
             self.SFCScheduleToGSheets(
                 dateList[0],
-                sortedSchedule.loc[sortedSchedule["Date"] == dateList[0], :],
+                sortedSchedule.loc[sortedSchedule["Date"].dt.date == dateList[0], :],
             )
 
         # Write out schedule one block per slide. Hide slide if no classes.
         for i in range(0, len(dateList)):
             singleDaySched = sortedSchedule.loc[
-                sortedSchedule["Date"] == dateList[i], :
+                sortedSchedule["Date"].dt.date == dateList[i], :
             ]
-            daytimeBlock = singleDaySched.loc[
-                singleDaySched["Start Time"].astype("datetime64") < "17:00:00", :
-            ]
+            daytimeBlock = (
+                singleDaySched.set_index("Start Time")
+                .between_time("00:00", "17:00", inclusive="left")
+                .reset_index()
+            )
+            daytimeBlock["Start Time"] = daytimeBlock["Start Time"].dt.strftime(
+                "%I:%M %p"
+            )
+            daytimeBlock["End Time"] = daytimeBlock["End Time"].dt.strftime("%I:%M %p")
             daytimeBlock = daytimeBlock.sort_values(by=["Room", "Start Time"])
             daytime5thFlr = daytimeBlock.loc[daytimeBlock["Room"] <= "Classroom 515", :]
             daytime6thFlr = daytimeBlock.loc[
@@ -2384,9 +2461,15 @@ class Ui_mainWindow(object):
             ]
             daytime7thFlr = daytimeBlock.loc[daytimeBlock["Room"] >= "Classroom 702", :]
 
-            eveningBlock = singleDaySched.loc[
-                singleDaySched["Start Time"].astype("datetime64") >= "17:00:00", :
-            ]
+            eveningBlock = (
+                singleDaySched.set_index("Start Time")
+                .between_time("17:00", "00:00", inclusive="left")
+                .reset_index()
+            )
+            eveningBlock["Start Time"] = eveningBlock["Start Time"].dt.strftime(
+                "%I:%M %p"
+            )
+            eveningBlock["End Time"] = eveningBlock["End Time"].dt.strftime("%I:%M %p")
             eveningBlock = eveningBlock.sort_values(by=["Room", "Start Time"])
             evening5thFlr = eveningBlock.loc[eveningBlock["Room"] <= "Classroom 515", :]
             evening6thFlr = eveningBlock.loc[
@@ -2822,26 +2905,37 @@ class Ui_mainWindow(object):
         self, date: datetime.datetime, schedule: pd.DataFrame
     ) -> pygsheets.PyGsheetsException:
         # Sort schedule by time of day blocks and floor
-        schedule["Room"] = schedule["Room"].str.lstrip("Classroom ")
-        daytimeBlock = schedule.loc[
-            schedule["Start Time"].astype("datetime64") < "17:00:00", :
-        ]
+        daytimeBlock = (
+            schedule.set_index("Start Time")
+            .between_time("00:00", "17:00", inclusive="left")
+            .reset_index()
+        )
         daytimeBlock = daytimeBlock.sort_values(by=["Room", "Start Time"])
-        daytime5thFlr = daytimeBlock.loc[daytimeBlock["Room"] <= "515", :]
+        daytimeBlock["Start Time"] = daytimeBlock["Start Time"].dt.strftime("%I:%M %p")
+        daytimeBlock["End Time"] = daytimeBlock["End Time"].dt.strftime("%I:%M %p")
+        daytime5thFlr = daytimeBlock.loc[daytimeBlock["Room"] <= "Classroom 515", :]
         daytime6thFlr = daytimeBlock.loc[
-            (daytimeBlock["Room"] >= "602") & (daytimeBlock["Room"] <= "613"), :
+            (daytimeBlock["Room"] >= "Classroom 602")
+            & (daytimeBlock["Room"] <= "Classroom 613"),
+            :,
         ]
-        daytime7thFlr = daytimeBlock.loc[daytimeBlock["Room"] >= "702", :]
+        daytime7thFlr = daytimeBlock.loc[daytimeBlock["Room"] >= "Classroom 702", :]
 
-        eveningBlock = schedule.loc[
-            schedule["Start Time"].astype("datetime64") >= "17:00:00", :
-        ]
+        eveningBlock = (
+            schedule.set_index("Start Time")
+            .between_time("17:00", "00:00", inclusive="left")
+            .reset_index()
+        )
+        eveningBlock["Start Time"] = eveningBlock["Start Time"].dt.strftime("%I:%M %p")
+        eveningBlock["End Time"] = eveningBlock["End Time"].dt.strftime("%I:%M %p")
         eveningBlock = eveningBlock.sort_values(by=["Room", "Start Time"])
-        evening5thFlr = eveningBlock.loc[eveningBlock["Room"] <= "515", :]
+        evening5thFlr = eveningBlock.loc[eveningBlock["Room"] <= "Classroom 515", :]
         evening6thFlr = eveningBlock.loc[
-            (eveningBlock["Room"] >= "602") & (eveningBlock["Room"] <= "613"), :
+            (eveningBlock["Room"] >= "Classroom 602")
+            & (eveningBlock["Room"] <= "Classroom 613"),
+            :,
         ]
-        evening7thFlr = eveningBlock.loc[eveningBlock["Room"] >= "702", :]
+        evening7thFlr = eveningBlock.loc[eveningBlock["Room"] >= "Classroom 702", :]
 
         blockList = ["Daytime", "Evening"]
         floorList = [
